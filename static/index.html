@@ -1860,6 +1860,14 @@
       margin-top: -3.5px;
     }
 
+    /* 叢集刻度(代表同位置多筆個資):畫成雙線以與單筆區別 */
+    .audit-tick.is-cluster::after {
+      height: 7px;
+      margin-top: -3.5px;
+      border-top: 2px solid var(--paper);
+      border-bottom: 2px solid var(--paper);
+    }
+
     .audit-tick:focus-visible {
       outline: 2px solid var(--focus);
       outline-offset: -2px;
@@ -2939,6 +2947,8 @@
       window.setTimeout(() => renderAuditAxis(isRetry), 80);
     }
 
+    const AUDIT_TARGET = 24;   // WCAG 2.2 2.5.8 最小目標尺寸
+
     function renderAuditAxis(isRetry = false) {
       if (!isRetry) auditAxisRetries = 0;
       clearAuditAxis();
@@ -2954,44 +2964,83 @@
           return;
         }
 
-        // 依可用軌道與筆數決定間距:讓「可見刻度」與「24px 點擊區」
-        // 同時不重疊——只分開可見線會造成「看到 A、點到 B」的落差
-        const spacing = Math.max(10, Math.min(24, trackHeight / Math.max(1, sourceHighlights.length)));
-        let lastTop = -Infinity;
+        // 每個刻度都維持 24px 目標尺寸(WCAG 2.5.8);軌道放不下時把
+        // 相鄰 finding 聚合成一個「叢集」刻度,點擊可循環巡覽成員,
+        // 而不是把目標縮小到不合規的尺寸
+        const minTop = startOffset + AUDIT_TARGET / 2;
+        const maxTop = startOffset + trackHeight - AUDIT_TARGET / 2;
+        const capacity = Math.max(1, Math.floor((maxTop - minTop) / AUDIT_TARGET) + 1);
         const viewRect = elements.sourceView.getBoundingClientRect();
+
+        const points = [];
         sourceHighlights.forEach((highlight) => {
           const findingIndex = highlight.dataset.findingIndex;
           const finding = state.textFindings[Number(findingIndex)];
           if (!finding) return;
-          // 用視覺矩形換算(offsetTop 受 offsetParent 影響,同一段落中
-          // 各行的 inline span 可能回報相同值,導致刻度全部疊在一起)
+          // 用視覺矩形換算(offsetTop 受 offsetParent 影響,同段落中各行
+          // 的 inline span 可能回報相同值,導致刻度全部疊在一起)
           const spanRect = highlight.getBoundingClientRect();
           const contentTop = spanRect.top - viewRect.top + elements.sourceView.scrollTop;
           const ratio = Math.max(0, Math.min(1, contentTop / elements.sourceView.scrollHeight));
-          let top = Math.round(startOffset + ratio * trackHeight);
-          // 與前一筆保持至少 spacing(含相距 1-5px 的近碰撞)
-          if (top < lastTop + spacing) top = Math.round(lastTop + spacing);
-          // 不再硬夾到軌道末端:夾擠會讓最後一筆與前一筆重疊;
-          // spacing = 軌道高/筆數 已保證整體落在軌道內
-          lastTop = top;
+          points.push({ desired: minTop + ratio * (maxTop - minTop), findingIndex, finding });
+        });
+        if (points.length === 0) return;
+
+        // 依需求位置聚合成不超過容量的叢集
+        let clusters = points.map((point) => ({ desired: point.desired, members: [point] }));
+        while (clusters.length > capacity) {
+          let mergeAt = 0;
+          let smallestGap = Infinity;
+          for (let i = 0; i < clusters.length - 1; i += 1) {
+            const gap = clusters[i + 1].desired - clusters[i].desired;
+            if (gap < smallestGap) { smallestGap = gap; mergeAt = i; }
+          }
+          const merged = clusters[mergeAt].members.concat(clusters[mergeAt + 1].members);
+          const desired = merged.reduce((sum, m) => sum + m.desired, 0) / merged.length;
+          clusters.splice(mergeAt, 2, { desired, members: merged });
+        }
+
+        // 前向鬆弛(拉開重疊)後再反向鬆弛(把溢出軌道的推回界內),
+        // 只做單向會讓末端刻度溢出而被父層 overflow:hidden 裁掉
+        const tops = clusters.map((c) => c.desired);
+        for (let i = 1; i < tops.length; i += 1) {
+          if (tops[i] < tops[i - 1] + AUDIT_TARGET) tops[i] = tops[i - 1] + AUDIT_TARGET;
+        }
+        if (tops.length && tops[tops.length - 1] > maxTop) tops[tops.length - 1] = maxTop;
+        for (let i = tops.length - 2; i >= 0; i -= 1) {
+          if (tops[i] > tops[i + 1] - AUDIT_TARGET) tops[i] = tops[i + 1] - AUDIT_TARGET;
+        }
+        for (let i = 0; i < tops.length; i += 1) {
+          tops[i] = Math.min(maxTop, Math.max(minTop, tops[i]));
+        }
+
+        clusters.forEach((cluster, index) => {
+          const primary = cluster.members[0];
           const tick = createElement('button', 'audit-tick');
           tick.type = 'button';
-          tick.style.top = `${top}px`;
-          tick.style.height = `${Math.round(spacing)}px`;
-          tick.style.minHeight = `${Math.round(spacing)}px`;
-          tick.style.marginTop = `${Math.round(-spacing / 2)}px`;
-          applyEntityDotStyle(tick, finding.entity_type);
+          tick.style.top = `${Math.round(tops[index])}px`;
+          applyEntityDotStyle(tick, primary.finding.entity_type);
+          if (cluster.members.length > 1) tick.classList.add('is-cluster');
+          const describe = (member) =>
+            `${entityShortCode(member.finding.entity_type)} ${entityLabel(member.finding.entity_type)}:${String(member.finding.original_masked ?? '已遮罩')}`;
           tick.setAttribute(
             'aria-label',
-            `跳至 ${entityShortCode(finding.entity_type)} ${entityLabel(finding.entity_type)}:${String(finding.original_masked ?? '已遮罩')}`
+            cluster.members.length > 1
+              ? `跳至此處 ${cluster.members.length} 筆個資(${cluster.members.map(describe).join('、')}),重複點擊可逐筆巡覽`
+              : `跳至 ${describe(primary)}`
           );
-          tick.addEventListener('mouseenter', () => setAuditHighlight(findingIndex, true));
-          tick.addEventListener('mouseleave', () => setAuditHighlight(findingIndex, false));
-          tick.addEventListener('focus', () => setAuditHighlight(findingIndex, true));
-          tick.addEventListener('blur', () => setAuditHighlight(findingIndex, false));
+          let cursor = 0;
+          const focusMember = (member, active) => setAuditHighlight(member.findingIndex, active);
+          const setAll = (active) => cluster.members.forEach((m) => focusMember(m, active));
+          tick.addEventListener('mouseenter', () => setAll(true));
+          tick.addEventListener('mouseleave', () => setAll(false));
+          tick.addEventListener('focus', () => setAll(true));
+          tick.addEventListener('blur', () => setAll(false));
           tick.addEventListener('click', () => {
+            const member = cluster.members[cursor % cluster.members.length];
+            cursor += 1;
             [elements.sourceView, elements.resultView].forEach((container) => {
-              const target = container.querySelector(`[data-finding-index="${findingIndex}"]`);
+              const target = container.querySelector(`[data-finding-index="${member.findingIndex}"]`);
               if (!target) return;
               container.scrollTop = Math.max(0, target.offsetTop - container.clientHeight / 2 + target.offsetHeight / 2);
             });
