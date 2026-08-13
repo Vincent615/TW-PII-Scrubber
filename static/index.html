@@ -27,7 +27,24 @@
       --radius-lg: 18px;
       --radius-md: 12px;
       --radius-sm: 8px;
+      --fs-micro: 11px;   /* 圖示內嵌標籤 */
+      --fs-label: 13px;   /* eyebrow / 區塊小標 / 步驟編號 / 等寬範例 */
+      --fs-meta:  15px;   /* 次要資訊:計數、提示、圖例、徽章、表頭、頁尾、小註 */
+      --fs-body:  17px;   /* 介面主體:一般按鈕、表格內容、狀態列、空狀態、錯誤訊息 */
+      --fs-emph:  19px;   /* 強調層:偵測類型 chip、模式名稱、檔名、欄名、批次主按鈕 */
+      --fs-title: 21px;   /* 面板/區塊標題、文字分頁主行動按鈕 */
+      --fs-tab:   24px;   /* 分頁導覽按鈕 */
+      --fs-brand: 30px;   /* 品牌標題 */
+      --fs-read:  19px;   /* 閱讀面:原文 textarea 與結果檢視 */
+      --fw-regular: 500;  /* 內文 */
+      --fw-medium:  650;  /* 次要強調:chip、表頭、meta */
+      --fw-bold:    780;  /* 標題、主按鈕、分頁、檔名 */
+      --lh-tight: 1.3;    /* 標題、按鈕、單行 UI */
+      --lh-normal: 1.6;   /* 一般文字與表格 */
+      --lh-read: 1.85;    /* 閱讀面 */
       font-family: "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif;
+      font-weight: var(--fw-regular);
+      line-height: var(--lh-normal);
       color: var(--ink);
       background: var(--canvas);
     }
@@ -132,23 +149,26 @@
       color: #fff;
       background: var(--navy);
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 16px;
-      font-weight: 800;
+      font-size: var(--fs-body);
+      font-weight: var(--fw-bold);
+      line-height: var(--lh-tight);
       letter-spacing: 0.08em;
       box-shadow: inset 0 -8px 0 var(--jade);
     }
 
     .brand-copy h1 {
       margin: 0;
-      font-size: 30px;
-      line-height: 1.18;
+      font-size: var(--fs-brand);
+      font-weight: var(--fw-bold);
+      line-height: var(--lh-tight);
       letter-spacing: -0.025em;
     }
 
     .brand-copy p {
       margin: 7px 0 0;
       color: var(--ink-soft);
-      font-size: 16px;
+      font-size: var(--fs-meta);
+      line-height: var(--lh-tight);
       letter-spacing: 0.08em;
     }
 
@@ -170,8 +190,9 @@
       border: 0;
       color: var(--ink-soft);
       background: transparent;
-      font-size: 22px;
-      font-weight: 750;
+      font-size: var(--fs-tab);
+      font-weight: var(--fw-bold);
+      line-height: var(--lh-tight);
       letter-spacing: 0.04em;
     }
 
@@ -246,11 +267,88 @@
     }
 
     .control-card {
+      overflow: hidden;
+    }
+
+    .control-card-toggle {
       display: grid;
+      width: 100%;
+      min-height: 48px;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 14px;
+      padding: 10px 20px;
+      border: 0;
+      border-bottom: 1px solid var(--line);
+      color: var(--ink);
+      background: #f8fbfa;
+      font-size: var(--fs-title);
+      font-weight: var(--fw-bold);
+      line-height: var(--lh-tight);
+      text-align: left;
+      transition: background 140ms ease;
+    }
+
+    .control-card-toggle:hover {
+      background: #f1f7f6;
+    }
+
+    .control-card-toggle svg {
+      width: 20px;
+      height: 20px;
+      transition: transform 200ms ease;
+    }
+
+    .control-card.is-collapsed .control-card-toggle svg {
+      transform: rotate(180deg);
+    }
+
+    .control-summary {
+      min-width: 0;
+      overflow: hidden;
+      color: var(--ink-soft);
+      font-size: var(--fs-meta);
+      font-weight: var(--fw-medium);
+      line-height: var(--lh-tight);
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .control-summary.is-warning {
+      color: var(--warning);
+    }
+
+    /* 收合用 max-height 而非 grid-template-rows: 0fr——後者在高度不定的
+       容器中,軌道仍會被內容撐開(實測不收合) */
+    .control-card-content {
+      /* 預設值僅供首次繪製;實際值由 JS 依 scrollHeight 寫入,避免內容
+         增加時被裁切。收合不用 grid-template-rows: 0fr——該技巧在高度
+         不定的容器中軌道仍被內容撐開(實測不收合) */
+      max-height: var(--control-content-height, 400px);
+      overflow: hidden;
+      transition: max-height 200ms ease, opacity 160ms ease;
+    }
+
+    .control-card.is-collapsed .control-card-content {
+      max-height: 0;
+      opacity: 0;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .control-card-content,
+      .control-card-toggle svg {
+        transition: none;
+      }
+    }
+
+    .control-card-grid {
+      display: grid;
+      min-height: 0;
       /* 380px:字級放大後,佔位符範例「王小明 → <PERSON_1>」的最小容納寬 */
       grid-template-columns: 380px 1fr;
       gap: 24px;
-      padding: 14px 24px 12px;
+      overflow: hidden;
+      padding: 8px 24px 12px;
     }
 
     .control-group + .control-group {
@@ -263,8 +361,9 @@
       display: block;
       margin-bottom: 10px;
       color: var(--ink-soft);
-      font-size: 14px;
-      font-weight: 800;
+      font-size: var(--fs-label);
+      font-weight: var(--fw-medium);
+      line-height: var(--lh-tight);
       letter-spacing: 0.13em;
       text-transform: uppercase;
     }
@@ -327,16 +426,17 @@
     }
 
     .mode-label {
-      font-size: 18px;
-      font-weight: 800;
+      font-size: var(--fs-emph);
+      font-weight: var(--fw-bold);
+      line-height: var(--lh-tight);
     }
 
     .mode-example {
       overflow: hidden;
       color: var(--ink-soft);
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 13px;
-      line-height: 1.25;
+      font-size: var(--fs-label);
+      line-height: var(--lh-tight);
       white-space: nowrap;
       text-overflow: ellipsis;  /* 極窄視窗時優雅截斷,不爆框 */
     }
@@ -351,8 +451,9 @@
       border-radius: 999px;
       color: var(--ink);
       background: #f9fbfb;
-      font-size: 18px;
-      font-weight: 650;
+      font-size: var(--fs-emph);
+      font-weight: var(--fw-medium);
+      line-height: var(--lh-tight);
       transition: border-color 140ms ease, background 140ms ease, transform 140ms ease;
     }
 
@@ -368,8 +469,8 @@
     }
 
     .choice-chip input {
-      width: 16px;
-      height: 16px;
+      width: 18px;
+      height: 18px;
       margin: 0;
       accent-color: var(--jade);
     }
@@ -385,7 +486,7 @@
     .entity-status {
       margin: 9px 0 0;
       color: var(--ink-soft);
-      font-size: 15px;
+      font-size: var(--fs-meta);
     }
 
     .entity-status.is-error {
@@ -434,7 +535,9 @@
 
     .panel-title {
       margin: 0;
-      font-size: 20px;
+      font-size: var(--fs-title);
+      font-weight: var(--fw-bold);
+      line-height: var(--lh-tight);
       letter-spacing: 0.01em;
     }
 
@@ -442,8 +545,8 @@
       display: inline-block;
       margin-left: 7px;
       color: var(--ink-soft);
-      font-size: 15px;
-      font-weight: 500;
+      font-size: var(--fs-meta);
+      font-weight: var(--fw-regular);
     }
 
     .ghost-button,
@@ -456,7 +559,8 @@
       justify-content: center;
       gap: 8px;
       border-radius: var(--radius-sm);
-      font-weight: 750;
+      font-weight: var(--fw-bold);
+      line-height: var(--lh-tight);
       transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
     }
 
@@ -470,7 +574,7 @@
       border: 1px solid var(--line);
       color: var(--jade-dark);
       background: var(--paper);
-      font-size: 16px;
+      font-size: var(--fs-body);
     }
 
     .secondary-button,
@@ -500,7 +604,7 @@
       min-height: 58px;
       padding: 12px 20px;
       border-radius: 10px;
-      font-size: 20px;
+      font-size: var(--fs-title);
       box-shadow: 0 10px 22px rgba(14, 118, 110, 0.22);
     }
 
@@ -516,9 +620,9 @@
       border-radius: 5px;
       color: rgba(255, 255, 255, 0.82);
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 13px;
-      font-weight: 700;
-      line-height: 1;
+      font-size: var(--fs-label);
+      font-weight: var(--fw-medium);
+      line-height: var(--lh-tight);
     }
 
     .primary-button:not(:disabled):hover,
@@ -541,8 +645,8 @@
       color: var(--ink);
       background: var(--paper);
       font-family: "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
-      font-size: 19px;
-      line-height: 1.85;
+      font-size: var(--fs-read);
+      line-height: var(--lh-read);
       white-space: pre-wrap;
       overflow-wrap: anywhere;
       overflow-y: auto;
@@ -591,9 +695,9 @@
     .empty-state-copy {
       max-width: 210px;
       color: #71888d;
-      font-size: 16px;
-      font-weight: 700;
-      line-height: 1.55;
+      font-size: var(--fs-body);
+      font-weight: var(--fw-medium);
+      line-height: var(--lh-normal);
       text-align: left;
     }
 
@@ -607,17 +711,17 @@
       border-top: 1px solid var(--line);
       color: var(--ink-soft);
       background: #fbfdfc;
-      font-size: 15px;
+      font-size: var(--fs-meta);
     }
 
     .counter.is-over {
       color: var(--danger);
-      font-weight: 800;
+      font-weight: var(--fw-bold);
     }
 
     .input-hint {
       color: var(--danger);
-      font-weight: 650;
+      font-weight: var(--fw-medium);
     }
 
     .legend {
@@ -634,8 +738,9 @@
       align-items: center;
       gap: 6px;
       border-radius: 999px;
-      font-size: 15px;
-      font-weight: 750;
+      font-size: var(--fs-meta);
+      font-weight: var(--fw-medium);
+      line-height: var(--lh-tight);
       white-space: nowrap;
     }
 
@@ -659,7 +764,7 @@
       padding: 0.08em 0.12em;
       border-bottom: 2px solid transparent;
       border-radius: 4px 4px 2px 2px;
-      font-weight: 700;
+      font-weight: var(--fw-medium);
       box-decoration-break: clone;
       -webkit-box-decoration-break: clone;
     }
@@ -706,12 +811,12 @@
       align-items: center;
       gap: 9px;
       color: var(--ink-soft);
-      font-size: 16px;
+      font-size: var(--fs-body);
     }
 
     .status-line.is-success {
       color: var(--jade-dark);
-      font-weight: 700;
+      font-weight: var(--fw-medium);
     }
 
     .spinner {
@@ -755,8 +860,8 @@
       border-radius: var(--radius-sm);
       color: var(--danger);
       background: var(--danger-pale);
-      font-size: 16px;
-      line-height: 1.55;
+      font-size: var(--fs-body);
+      line-height: var(--lh-normal);
     }
 
     .details-card {
@@ -776,12 +881,14 @@
     .section-head h2,
     .file-section h2 {
       margin: 0;
-      font-size: 21px;
+      font-size: var(--fs-title);
+      font-weight: var(--fw-bold);
+      line-height: var(--lh-tight);
     }
 
     .section-note {
       color: var(--ink-soft);
-      font-size: 15px;
+      font-size: var(--fs-meta);
     }
 
     .table-wrap {
@@ -791,7 +898,8 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 16px;
+      font-size: var(--fs-body);
+      line-height: var(--lh-normal);
     }
 
     th,
@@ -805,8 +913,9 @@
     th {
       color: var(--ink-soft);
       background: #f8fbfa;
-      font-size: 14px;
-      font-weight: 800;
+      font-size: var(--fs-meta);
+      font-weight: var(--fw-medium);
+      line-height: var(--lh-tight);
       letter-spacing: 0.08em;
       white-space: nowrap;
     }
@@ -878,8 +987,9 @@
       color: var(--jade-dark);
       background: var(--jade-pale);
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 15px;
-      font-weight: 900;
+      font-size: var(--fs-label);
+      font-weight: var(--fw-bold);
+      line-height: var(--lh-tight);
       vertical-align: 2px;
     }
 
@@ -917,8 +1027,8 @@
     }
 
     .file-picker.is-compact strong {
-      font-size: 15px;
-      font-weight: 650;
+      font-size: var(--fs-emph);
+      font-weight: var(--fw-bold);
     }
 
     .file-picker:hover,
@@ -940,8 +1050,8 @@
       stroke-width: 1.45;
     }
 
-    .file-picker strong { display: block; margin-bottom: 6px; font-size: 20px; }
-    .file-picker p { margin: 0 0 12px; color: var(--ink-soft); font-size: 16px; }
+    .file-picker strong { display: block; margin-bottom: 6px; font-size: var(--fs-emph); font-weight: var(--fw-bold); line-height: var(--lh-tight); }
+    .file-picker p { margin: 0 0 12px; color: var(--ink-soft); font-size: var(--fs-meta); }
 
     .dropzone-action {
       display: inline-flex;
@@ -954,11 +1064,12 @@
       border-radius: var(--radius-sm);
       color: var(--jade-dark);
       background: var(--paper);
-      font-size: 16px;
-      font-weight: 750;
+      font-size: var(--fs-body);
+      font-weight: var(--fw-bold);
+      line-height: var(--lh-tight);
     }
 
-    .dropzone-action svg { width: 17px; height: 17px; }
+    .dropzone-action svg { width: 18px; height: 18px; }
 
     .visually-hidden {
       position: absolute !important;
@@ -973,7 +1084,7 @@
       white-space: nowrap !important;
     }
 
-    .batch-file-summary { min-height: 20px; margin: 12px 0 0; color: var(--jade-dark); font-size: 16px; font-weight: 750; }
+    .batch-file-summary { min-height: 20px; margin: 12px 0 0; color: var(--jade-dark); font-size: var(--fs-body); font-weight: var(--fw-bold); }
     .batch-file-list { display: grid; gap: 10px; margin-top: 14px; }
 
     .batch-file-row {
@@ -990,13 +1101,13 @@
     .batch-file-row.is-error { border-color: #e2aaa6; background: var(--danger-pale); }
     .file-type-icon { position: relative; display: grid; width: 40px; height: 40px; place-items: center; border-radius: 9px; color: var(--jade-dark); background: var(--jade-pale); }
     .file-type-icon svg { width: 23px; height: 23px; margin-top: -5px; fill: none; stroke: currentColor; stroke-width: 1.65; }
-    .file-type-icon-label { position: absolute; right: 0; bottom: 3px; left: 0; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 9px; font-weight: 900; letter-spacing: .04em; text-align: center; }
+    .file-type-icon-label { position: absolute; right: 0; bottom: 3px; left: 0; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: var(--fs-micro); font-weight: var(--fw-bold); line-height: var(--lh-tight); letter-spacing: .04em; text-align: center; }
     .file-type-icon.is-xlsx { color: #287348; background: #e4f3e9; }
     .file-type-icon.is-csv { color: #46698e; background: #e7eef8; }
-    .batch-file-name { overflow: hidden; font-size: 18px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+    .batch-file-name { overflow: hidden; font-size: var(--fs-emph); font-weight: var(--fw-bold); line-height: var(--lh-tight); text-overflow: ellipsis; white-space: nowrap; }
     .batch-file-size,
     .batch-file-preview,
-    .batch-file-error { margin-top: 3px; color: var(--ink-soft); font-size: 15px; line-height: 1.45; }
+    .batch-file-error { margin-top: 3px; color: var(--ink-soft); font-size: var(--fs-meta); line-height: var(--lh-normal); }
     .batch-file-error { color: var(--danger); }
 
     .status-chip {
@@ -1008,15 +1119,16 @@
       border-radius: 999px;
       color: var(--ink-soft);
       background: #e7efef;
-      font-size: 14px;
-      font-weight: 800;
+      font-size: var(--fs-meta);
+      font-weight: var(--fw-medium);
+      line-height: var(--lh-tight);
       white-space: nowrap;
     }
 
     .status-chip.is-success { color: var(--jade-dark); background: var(--jade-pale); }
     .status-chip.is-error { color: var(--danger); background: #f8deda; }
     .status-chip.is-processing { color: var(--navy); background: #e4edf5; }
-    .status-chip svg { width: 13px; height: 13px; }
+    .status-chip svg { width: 15px; height: 15px; }
 
     .icon-button {
       display: grid;
@@ -1035,8 +1147,8 @@
     .strategy-table { overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius-md); }
     .strategy-row { display: grid; grid-template-columns: minmax(240px, 1fr) 180px 180px; align-items: center; gap: 14px; padding: 11px 14px; background: #fbfdfc; }
     .strategy-row + .strategy-row { border-top: 1px solid var(--line); }
-    .strategy-row.is-head { color: var(--ink-soft); background: #f1f6f5; font-size: 14px; font-weight: 800; letter-spacing: .06em; }
-    .column-name { overflow: hidden; font-size: 18px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+    .strategy-row.is-head { color: var(--ink-soft); background: #f1f6f5; font-size: var(--fs-meta); font-weight: var(--fw-medium); line-height: var(--lh-tight); letter-spacing: .06em; }
+    .column-name { overflow: hidden; font-size: var(--fs-emph); font-weight: var(--fw-bold); line-height: var(--lh-tight); text-overflow: ellipsis; white-space: nowrap; }
 
     .strategy-select {
       width: 132px;
@@ -1046,16 +1158,16 @@
       border-radius: 7px;
       color: var(--ink);
       background: var(--paper);
-      font-size: 15px;
+      font-size: var(--fs-meta);
     }
 
     .override-list { display: grid; gap: 8px; margin-top: 14px; }
     .override-card { border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--paper); }
-    .override-card summary { padding: 11px 13px; cursor: pointer; font-size: 16px; font-weight: 750; }
+    .override-card summary { padding: 11px 13px; cursor: pointer; font-size: var(--fs-body); font-weight: var(--fw-bold); line-height: var(--lh-tight); }
     .override-card-body { display: grid; gap: 8px; padding: 0 13px 13px; }
     .override-row { display: grid; grid-template-columns: minmax(180px, 1fr) 190px; align-items: center; gap: 12px; padding-top: 8px; border-top: 1px solid #e6eeed; }
     .override-row .strategy-select { width: 190px; }
-    .txt-file-note { padding: 11px 13px; border: 1px solid var(--line); border-radius: var(--radius-sm); color: var(--ink-soft); background: #f7faf9; font-size: 16px; }
+    .txt-file-note { padding: 11px 13px; border: 1px solid var(--line); border-radius: var(--radius-sm); color: var(--ink-soft); background: #f7faf9; font-size: var(--fs-meta); }
 
     .txt-note,
     .privacy-note {
@@ -1063,8 +1175,8 @@
       border-radius: var(--radius-sm);
       color: var(--ink-soft);
       background: #eef5f4;
-      font-size: 16px;
-      line-height: 1.55;
+      font-size: var(--fs-meta);
+      line-height: var(--lh-normal);
     }
 
     .privacy-note {
@@ -1073,28 +1185,29 @@
     }
 
     .batch-action-row { justify-content: flex-start; }
-    .batch-process-button { min-width: 260px; min-height: 52px; font-size: 19px; }
+    .batch-process-button { min-width: 260px; min-height: 52px; font-size: var(--fs-emph); }
+    .batch-process-button svg { width: 20px; height: 20px; }
     .batch-progress { margin-top: 16px; }
     .batch-progress-track { height: 10px; overflow: hidden; border-radius: 999px; background: #dce8e6; }
     .batch-progress-bar { width: 0; height: 100%; border-radius: inherit; background: var(--jade); transition: width 180ms ease; }
-    .batch-progress-text { display: block; margin-top: 8px; color: var(--ink-soft); font-size: 15px; font-weight: 700; }
+    .batch-progress-text { display: block; margin-top: 8px; color: var(--ink-soft); font-size: var(--fs-meta); font-weight: var(--fw-medium); }
     .batch-summary { display: flex; flex-wrap: wrap; gap: 10px 18px; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--radius-md); background: #f7faf9; }
     .batch-summary strong { color: var(--jade-dark); }
     .entity-totals { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 12px; }
-    .entity-total { display: inline-flex; align-items: center; gap: 7px; color: var(--ink-soft); font-size: 15px; }
+    .entity-total { display: inline-flex; align-items: center; gap: 7px; color: var(--ink-soft); font-size: var(--fs-meta); }
     .entity-total-dot { width: 8px; height: 8px; border-radius: 50%; }
     .batch-result-list { display: grid; gap: 9px; margin-top: 16px; }
     .batch-result-row { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(190px, .7fr) auto; align-items: center; gap: 14px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius-sm); }
     .batch-result-row.is-error { border-color: #e2aaa6; background: var(--danger-pale); }
     .batch-file-actions { justify-content: flex-end; gap: 8px; }
-    .small-button { min-height: 34px; padding: 6px 10px; font-size: 15px; }
+    .small-button { min-height: 34px; padding: 6px 10px; font-size: var(--fs-meta); }
     .file-result-content .privacy-note { margin: 14px 0 0; }
 
     .footer-note {
       margin: 0;
       color: var(--ink-soft);
-      font-size: 14px;
-      line-height: 1.5;
+      font-size: var(--fs-meta);
+      line-height: var(--lh-normal);
       text-align: center;
     }
   </style>
@@ -1122,26 +1235,35 @@
     </header>
 
     <main>
-      <section class="control-card" aria-label="脫敏設定">
-        <div class="control-group">
-          <span class="control-title">脫敏模式</span>
-          <div class="radio-row">
-            <label class="mode-segment">
-              <input type="radio" name="mode" value="mask" checked>
-              <span class="mode-label">遮罩</span>
-              <span class="mode-example">王小明 → 王○○</span>
-            </label>
-            <label class="mode-segment">
-              <input type="radio" name="mode" value="placeholder">
-              <span class="mode-label">佔位符</span>
-              <span class="mode-example">王小明 → &lt;PERSON_1&gt;</span>
-            </label>
+      <section class="control-card" id="control-card" aria-label="脫敏設定">
+        <button class="control-card-toggle" id="control-card-toggle" type="button" aria-expanded="true" aria-controls="control-card-content">
+          <span>脫敏設定</span>
+          <span class="control-summary" id="control-summary" hidden></span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>
+        </button>
+        <div class="control-card-content" id="control-card-content" aria-hidden="false">
+          <div class="control-card-grid">
+            <div class="control-group">
+              <span class="control-title">脫敏模式</span>
+              <div class="radio-row">
+                <label class="mode-segment">
+                  <input type="radio" name="mode" value="mask" checked>
+                  <span class="mode-label">遮罩</span>
+                  <span class="mode-example">王小明 → 王○○</span>
+                </label>
+                <label class="mode-segment">
+                  <input type="radio" name="mode" value="placeholder">
+                  <span class="mode-label">佔位符</span>
+                  <span class="mode-example">王小明 → &lt;PERSON_1&gt;</span>
+                </label>
+              </div>
+            </div>
+            <div class="control-group">
+              <span class="control-title">偵測類型</span>
+              <div class="entity-list" id="entity-list" aria-busy="true"></div>
+              <p class="entity-status" id="entity-status" role="status">正在載入偵測類型…</p>
+            </div>
           </div>
-        </div>
-        <div class="control-group">
-          <span class="control-title">偵測類型</span>
-          <div class="entity-list" id="entity-list" aria-busy="true"></div>
-          <p class="entity-status" id="entity-status" role="status">正在載入偵測類型…</p>
         </div>
       </section>
 
@@ -1352,6 +1474,7 @@
     const state = {
       entitiesReady: false,
       entityLabels: new Map(),
+      controlsCollapsed: false,
       activeTab: 'text',
       textBusy: false,
       textSource: '',
@@ -1373,6 +1496,10 @@
 
     const byId = (id) => document.getElementById(id);
     const elements = {
+      controlCard: byId('control-card'),
+      controlCardToggle: byId('control-card-toggle'),
+      controlCardContent: byId('control-card-content'),
+      controlSummary: byId('control-summary'),
       tabText: byId('tab-text'),
       tabFile: byId('tab-file'),
       panelText: byId('panel-text'),
@@ -1459,6 +1586,21 @@
     function currentMode() {
       const selected = document.querySelector('input[name="mode"]:checked');
       return selected ? selected.value : 'mask';
+    }
+
+    function setControlsCollapsed(isCollapsed) {
+      state.controlsCollapsed = Boolean(isCollapsed);
+      // 展開高度取實測 scrollHeight:寫死的 max-height 在偵測類型增加、
+      // 換行變多時會把內容裁掉,實測值則永遠貼合內容
+      elements.controlCardContent.style.setProperty(
+        '--control-content-height',
+        `${elements.controlCardContent.scrollHeight}px`
+      );
+      elements.controlCard.classList.toggle('is-collapsed', state.controlsCollapsed);
+      elements.controlCardToggle.setAttribute('aria-expanded', String(!state.controlsCollapsed));
+      elements.controlCardContent.setAttribute('aria-hidden', String(state.controlsCollapsed));
+      elements.controlCardContent.inert = state.controlsCollapsed;
+      elements.controlSummary.hidden = !state.controlsCollapsed;
     }
 
     function selectedEntities() {
@@ -1685,6 +1827,18 @@
       const overLimit = textLength > MAX_TEXT_LENGTH;
       const selected = selectedEntities();
       const hasEntities = selected.length > 0;
+      const modeSummary = currentMode() === 'placeholder' ? '佔位符模式' : '遮罩模式';
+
+      if (state.entitiesReady) {
+        const total = state.entityLabels.size;
+        elements.controlSummary.textContent = hasEntities
+          ? `${modeSummary} · 偵測 ${selected.length} / ${total} 種類型`
+          : `${modeSummary} · 未選擇偵測類型`;
+        elements.controlSummary.classList.toggle('is-warning', !hasEntities);
+      } else {
+        elements.controlSummary.textContent = `${modeSummary} · 偵測類型尚未就緒`;
+        elements.controlSummary.classList.remove('is-warning');
+      }
 
       // 偵測類型狀態行:即時反映勾選數;已有結果但勾選變更時提醒需重跑
       if (state.entitiesReady) {
@@ -2649,6 +2803,11 @@
       }
     }
 
+    elements.controlCardToggle.addEventListener('click', () => setControlsCollapsed(!state.controlsCollapsed));
+    // 視窗變窄會讓偵測類型換行變多,展開高度需重新量測
+    window.addEventListener('resize', () => {
+      if (!state.controlsCollapsed) setControlsCollapsed(false);
+    });
     elements.tabText.addEventListener('click', () => activateTab('text'));
     elements.tabFile.addEventListener('click', () => activateTab('file'));
     elements.sourceInput.addEventListener('input', () => {
@@ -2680,6 +2839,7 @@
       if (!elements.startScrub.disabled) scrubText();
     });
 
+    setControlsCollapsed(false);
     refreshControls();
     loadEntities();
   </script>
