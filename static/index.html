@@ -1864,8 +1864,12 @@
     .audit-tick.is-cluster::after {
       height: 7px;
       margin-top: -3.5px;
-      border-top: 2px solid var(--paper);
-      border-bottom: 2px solid var(--paper);
+      background: linear-gradient(
+        to bottom,
+        currentColor 0 3px,
+        transparent 3px 4px,
+        currentColor 4px 7px
+      );
     }
 
     .audit-tick:focus-visible {
@@ -2955,7 +2959,15 @@
       try {
         if (state.textResult === null || elements.sourceView.hidden) return;
         const sourceHighlights = Array.from(elements.sourceView.querySelectorAll('.highlight[data-finding-index]'));
-        const axisHeight = elements.auditAxis.clientHeight;
+        // 以「實際可視範圍」而非元素高度計算軌道:工作區若高於分頁
+        // 可視高度,軸的下半部會落在畫面外,刻度將無法點選
+        const axisRect = elements.auditAxis.getBoundingClientRect();
+        const panelRect = elements.panelText.getBoundingClientRect();
+        const visibleBottom = Math.min(axisRect.bottom, panelRect.bottom);
+        const axisHeight = Math.min(
+          elements.auditAxis.clientHeight,
+          Math.max(0, visibleBottom - axisRect.top)
+        );
         const startOffset = 54;
         const endOffset = 92;
         const trackHeight = axisHeight - startOffset - endOffset;
@@ -2986,19 +2998,27 @@
         });
         if (points.length === 0) return;
 
-        // 依需求位置聚合成不超過容量的叢集
-        let clusters = points.map((point) => ({ desired: point.desired, members: [point] }));
-        while (clusters.length > capacity) {
-          let mergeAt = 0;
-          let smallestGap = Infinity;
-          for (let i = 0; i < clusters.length - 1; i += 1) {
-            const gap = clusters[i + 1].desired - clusters[i].desired;
-            if (gap < smallestGap) { smallestGap = gap; mergeAt = i; }
+        // 單趟掃描分群 + 逐步放大群距,直到叢集數不超過容量。
+        // (逐次合併最小間距是 O(n^2),極端筆數會凍結主執行緒)
+        let clusters = [];
+        let slot = AUDIT_TARGET;
+        for (let attempt = 0; attempt < 32; attempt += 1) {
+          clusters = [];
+          let current = null;
+          for (const point of points) {
+            if (!current || point.desired >= current.start + slot) {
+              current = { start: point.desired, members: [point] };
+              clusters.push(current);
+            } else {
+              current.members.push(point);
+            }
           }
-          const merged = clusters[mergeAt].members.concat(clusters[mergeAt + 1].members);
-          const desired = merged.reduce((sum, m) => sum + m.desired, 0) / merged.length;
-          clusters.splice(mergeAt, 2, { desired, members: merged });
+          if (clusters.length <= capacity) break;
+          slot *= 1.6;
         }
+        clusters.forEach((cluster) => {
+          cluster.desired = cluster.members.reduce((sum, m) => sum + m.desired, 0) / cluster.members.length;
+        });
 
         // 前向鬆弛(拉開重疊)後再反向鬆弛(把溢出軌道的推回界內),
         // 只做單向會讓末端刻度溢出而被父層 overflow:hidden 裁掉
