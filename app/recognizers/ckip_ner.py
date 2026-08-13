@@ -30,6 +30,10 @@ CKIP_SCORE = 0.85
 
 CHUNK_CHARS = 400        # 每段字元上限(bert-base 上限 510 token,留裕度)
 CHUNKS_PER_BATCH = 8     # 每批段數(批與批之間為逾時檢查點)
+# 推論時左右各多帶的上下文字元數:硬切點若落在姓名中間,該姓名會
+# 只被辨識出片段(實測「王小明」跨界時只抓到「明」→ 前兩字外洩)。
+# 帶重疊推論、再依「起點落在本段核心區」去重,即可完整辨識。
+OVERLAP_CHARS = 30
 _BREAK_CHARS = "\n。!?;!?;"
 
 
@@ -117,7 +121,21 @@ class CkipNerRecognizer(EntityRecognizer):
         self.load()
 
         deadline = time.monotonic() + self.timeout_seconds
-        chunks = split_into_chunks(text)
+        # (推論起點, 推論文字, 核心區起, 核心區訖):推論帶重疊上下文,
+        # 但只採納「起點落在核心區」的結果,天然去重且不漏跨界 entity
+        chunks = [
+            (
+                max(0, offset - OVERLAP_CHARS),
+                text[
+                    max(0, offset - OVERLAP_CHARS) : min(
+                        len(text), offset + len(chunk) + OVERLAP_CHARS
+                    )
+                ],
+                offset,
+                offset + len(chunk),
+            )
+            for offset, chunk in split_into_chunks(text)
+        ]
         results: list[RecognizerResult] = []
         for i in range(0, len(chunks), CHUNKS_PER_BATCH):
             if time.monotonic() > deadline:
@@ -126,7 +144,7 @@ class CkipNerRecognizer(EntityRecognizer):
             # use_delim=True:CKIP 內部按「,。:;!?」切句(NerToken.idx
             # 仍為對原輸入的全域座標,已實測驗證),短句可明顯提升辨識率
             ner_lists = self._driver(
-                [chunk for _, chunk in batch],
+                [chunk for _, chunk, _, _ in batch],
                 use_delim=True,
                 batch_size=CHUNKS_PER_BATCH,
                 show_progress=False,
@@ -134,7 +152,7 @@ class CkipNerRecognizer(EntityRecognizer):
             # 推論完成後再檢查一次 deadline:最後一批不得無上限超時
             if time.monotonic() > deadline:
                 raise CkipTimeoutError("處理逾時,請縮短文字")
-            for (offset, chunk), tokens in zip(batch, ner_lists):
+            for (offset, chunk, core_start, core_end), tokens in zip(batch, ner_lists):
                 for tok in tokens:
                     entity = CKIP_TO_ENTITY.get(tok.ner)
                     if entity is None or entity not in wanted:
@@ -144,6 +162,9 @@ class CkipNerRecognizer(EntityRecognizer):
                         continue
                     start = offset + tok.idx[0]
                     end = offset + tok.idx[1]
+                    # 去重:重疊區的同一 entity 只由「起點所屬」的段採納
+                    if not (core_start <= start < core_end):
+                        continue
                     start, end = self._verify_span(text, start, end, word)
                     results.append(
                         RecognizerResult(

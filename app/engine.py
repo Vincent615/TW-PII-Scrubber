@@ -89,6 +89,12 @@ _JOINABLE_WHITESPACE = " 　\r\n"
 # @ 或 . 旁);風險有限:這些符號不影響身分證/手機/統編的 lookaround
 _JOIN_EXTRA_BOUNDARY = frozenset("@._")
 
+# 全形數字→半形(等長替換,座標一一對應,不需 index mapping)。
+# 必要性:regex 的 \d 吃全形,但字元類如身分證第二碼 [1289] 只吃
+# ASCII——全形寫的號碼會整串漏掉(2026-08 外部審查發現的漏遮)。
+_FULLWIDTH_DIGITS = "０１２３４５６７８９"
+_FULLWIDTH_TO_ASCII = {ord(c): str(i) for i, c in enumerate(_FULLWIDTH_DIGITS)}
+
 # 市話無檢查碼且樣式較寬鬆,跨行拼接須有電話相關上下文才視為有效
 _CROSSLINE_PHONE_KEYWORDS = (
     "手機", "電話", "門號", "聯絡", "致電", "回電", "撥", "分機", "簡訊",
@@ -143,7 +149,8 @@ def build_shadow_text(text: str) -> tuple[str, list[int]]:
     s2o: list[int] = []
     for idx, ch in enumerate(text):
         if not removed[idx]:
-            shadow_chars.append(ch)
+            # 全形數字在影子中正規化為半形(等長,座標不位移)
+            shadow_chars.append(_FULLWIDTH_TO_ASCII.get(ord(ch), ch))
             s2o.append(idx)
     return "".join(shadow_chars), s2o
 

@@ -10,6 +10,14 @@ pip install -r requirements-dev.txt
 python scripts/download_models.py   # CKIP 模型(約 400MB,僅此步需網路)
 ```
 
+開發用 `requirements.txt`(寬鬆版本範圍);正式部署與可重現建置用
+`requirements.lock`(pip-compile 產出,含所有相依的固定版本與 SHA-256):
+
+```bash
+pip install --require-hashes -r requirements.lock
+# 更新鎖定檔:pip-compile --generate-hashes --output-file=requirements.lock requirements.txt
+```
+
 ## 跑測試(PR 前必過)
 
 ```bash

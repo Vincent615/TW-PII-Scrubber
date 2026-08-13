@@ -60,10 +60,30 @@ app = FastAPI(
 )
 
 
+def _host_of(value: str) -> str:
+    """取出 Origin/Host 標頭中的主機名(去掉 scheme 與 port)。"""
+    host = value.split("://", 1)[-1].split("/", 1)[0]
+    if host.startswith("["):                      # IPv6 字面值
+        return host.split("]", 1)[0] + "]"
+    return host.rsplit(":", 1)[0] if ":" in host else host
+
+
 @app.middleware("http")
-async def limit_request_body(request: Request, call_next):
-    """依 Content-Length 先擋超大請求:限制若等到 multipart/JSON 全部
-    進了記憶體才檢查,就失去防護意義。"""
+async def guard_request(request: Request, call_next):
+    """本機防護三道:
+    1. Host 標頭必須是本機(擋 DNS rebinding——攻擊者網域解析到 127.0.0.1)。
+    2. 有 Origin 時必須是本機(擋惡意網頁跨站觸發本機推論)。
+    3. 請求體大小:有 Content-Length 先擋;沒有(chunked)則邊讀邊計量,
+       避免無 Content-Length 的請求繞過限制。
+    """
+    host_header = request.headers.get("host", "")
+    if host_header and _host_of(host_header) not in config.ALLOWED_ORIGIN_HOSTS:
+        return JSONResponse(status_code=421, content={"detail": "僅接受本機連線"})
+
+    origin = request.headers.get("origin")
+    if origin and _host_of(origin) not in config.ALLOWED_ORIGIN_HOSTS:
+        return JSONResponse(status_code=403, content={"detail": "跨來源請求已拒絕"})
+
     limit = (
         config.MAX_REQUEST_BYTES_ZIP
         if request.url.path == "/api/bundle-zip"
@@ -72,6 +92,15 @@ async def limit_request_body(request: Request, call_next):
     content_length = request.headers.get("content-length")
     if content_length and content_length.isdigit() and int(content_length) > limit:
         return JSONResponse(status_code=413, content={"detail": "請求內容過大"})
+
+    if content_length is None and request.method in ("POST", "PUT", "PATCH"):
+        # 無 Content-Length(chunked)時大小限制形同虛設,直接要求標頭:
+        # 瀏覽器 fetch 送字串或 FormData 一律會帶 Content-Length,
+        # 本機 GUI 不受影響(411 為此情境的標準狀態碼)
+        return JSONResponse(
+            status_code=411, content={"detail": "請求須帶 Content-Length"}
+        )
+
     return await call_next(request)
 
 

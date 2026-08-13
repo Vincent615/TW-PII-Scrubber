@@ -27,6 +27,12 @@ BATCH_TIME_BUDGET_SECONDS = 300
 MAX_ZIP_ENTRIES = 40
 MAX_ZIP_TOTAL_BYTES = 60 * 1024 * 1024
 
+# --- 本機 API 防護 ---
+# 只接受來自本機 GUI 的請求:惡意網頁雖讀不到回應(同源政策),
+# 但可跨站送出 multipart(simple request 免預檢)觸發本機高耗能推論,
+# 或以 DNS rebinding 手法讀取回應。驗 Origin/Host 成本低、收斂此面。
+ALLOWED_ORIGIN_HOSTS = {"127.0.0.1", "localhost", "[::1]"}
+
 # --- 請求體上限(middleware 依 Content-Length 先擋,避免大量記憶體配置後才拒絕)---
 MAX_REQUEST_BYTES_DEFAULT = 16 * 1024 * 1024   # 一般端點(單檔上傳 10MB + multipart 開銷)
 MAX_REQUEST_BYTES_ZIP = 96 * 1024 * 1024       # bundle-zip(60MB 內容的 Base64 + JSON 開銷)
