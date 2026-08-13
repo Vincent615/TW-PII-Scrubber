@@ -221,6 +221,13 @@
       overscroll-behavior: contain;
     }
 
+    /* 捲動容器的子項不可被壓縮:一旦被壓縮,內容會溢出卡片外被裁掉,
+       而容器誤判為沒有溢出(scrollHeight = clientHeight)導致捲軸不出現 */
+    #panel-text > *,
+    #panel-file > * {
+      flex-shrink: 0;
+    }
+
     #panel-text .workspace-card {
       display: flex;
       min-height: 360px;
@@ -888,6 +895,30 @@
       cursor: pointer;
       text-align: center;
       transition: border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
+    }
+
+    /* 已加入檔案後,選檔區收合成一列:大面積提示只在空狀態才需要,
+       空間讓給檔案清單與後續步驟 */
+    .file-picker.is-compact {
+      min-height: 0;
+      padding: 12px 18px;
+    }
+
+    .file-picker.is-compact .upload-icon,
+    .file-picker.is-compact p {
+      display: none;
+    }
+
+    .file-picker.is-compact > div {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+    }
+
+    .file-picker.is-compact strong {
+      font-size: 15px;
+      font-weight: 650;
     }
 
     .file-picker:hover,
@@ -2071,6 +2102,8 @@
       elements.batchFileSummary.textContent = state.files.length === 0
         ? '尚未加入檔案'
         : `${validCount} 個可處理${invalidCount ? ` · ${invalidCount} 個已排除` : ''}`;
+      // 已有檔案時把大面積選檔區收合,空間留給清單與後續步驟
+      elements.fileDropzone.classList.toggle('is-compact', state.files.length > 0);
 
       state.files.forEach((item) => {
         const row = createElement('article', `batch-file-row${item.previewError || item.status === 'failed' ? ' is-error' : ''}`);
