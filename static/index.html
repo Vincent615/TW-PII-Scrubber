@@ -2554,6 +2554,8 @@
       ORG: { group: '組織地點', line: 'dotted', code: '機構', label: '機構名稱', background: '#F3F0F7', border: '#6B3FA0' },
       LOC: { group: '組織地點', line: 'dotted', code: '地址', label: '地址地點', background: '#F3F0F7', border: '#6B3FA0' },
       AGENT_CODE: { group: '內部', line: 'solid', code: '代號', label: '客服人員代號', background: '#F2F3F4', border: '#5A6570' },
+      // 檔案批次的「整欄遮罩」策略產生的 finding(後端 entity_type)
+      COLUMN_MASK: { group: '內部', line: 'solid', code: '整欄', label: '整欄遮罩', background: '#F2F3F4', border: '#5A6570' },
       DEFAULT: { group: '其他', line: 'solid', code: '其他', label: '未知類型', background: '#F2F3F4', border: '#5A6570' }
     });
 
@@ -3068,6 +3070,9 @@
         }
         elements.entityStatus.textContent = entityText;
         elements.entityStatus.classList.toggle('is-error', selected.length === 0);
+        // 狀態行在 ResizeObserver 觀察的 grid 之外,文字換行會改變總高度,
+        // 因此在此重量一次(值穩定後不會再變動,不會造成迴圈)
+        measureControlContentHeight();
       }
       const anyBusy = state.textBusy || state.fileBusy;
       const validBatchItems = state.files.filter((item) => item.preview && !item.previewError);

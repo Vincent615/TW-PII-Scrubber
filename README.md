@@ -31,9 +31,9 @@
 - **鐵律:任何資料不得離開本機。執行期不呼叫任何外部 API、無 CDN、無遙測。**
   (連 FastAPI 內建 /docs 都停用了——swagger-ui 走 CDN。)
 
-![文字脫敏:左右對照、依類型分色高亮](assets/screenshot-text.jpg)
+![文字脫敏:左右對照、中央稽核軸標示每筆個資位置、依群組分色與線型高亮](assets/screenshot-text.jpg)
 
-![批次處理:逐檔進度、失敗隔離、ZIP 打包下載](assets/screenshot-batch.jpg)
+![批次處理:多檔逐一處理、失敗隔離、entity 統計與 ZIP 打包下載](assets/screenshot-batch.jpg)
 
 ---
 
