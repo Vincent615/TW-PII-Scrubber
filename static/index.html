@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <title>TW-PII-Scrubber 台灣個資脫敏工具</title>
+  <title>TW-PII-Scrubber 台灣繁體中文個資偵測、脫敏工具</title>
   <style>
     :root {
       --ink: #18333d;
@@ -138,32 +138,6 @@
       letter-spacing: 0.08em;
     }
 
-    .local-seal {
-      align-self: center;
-      margin-left: 18px;
-      padding: 8px 12px;
-      border: 1px solid #8fc9c1;
-      border-radius: 999px;
-      color: var(--jade-dark);
-      background: var(--jade-pale);
-      font-size: 15px;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      white-space: nowrap;
-    }
-
-    .local-seal::before {
-      content: "";
-      display: inline-block;
-      width: 7px;
-      height: 7px;
-      margin-right: 7px;
-      border-radius: 50%;
-      background: var(--jade);
-      box-shadow: 0 0 0 4px rgba(14, 118, 110, 0.12);
-      vertical-align: 1px;
-    }
-
     .tabs {
       display: grid;
       min-width: 260px;
@@ -181,8 +155,14 @@
       border: 0;
       color: var(--ink-soft);
       background: transparent;
+      font-size: 20px;
       font-weight: 750;
       letter-spacing: 0.04em;
+    }
+
+    .tab-button svg {
+      width: 22px;
+      height: 22px;
     }
 
     .tab-button + .tab-button {
@@ -1057,9 +1037,8 @@
         <div class="brand-mark" aria-hidden="true">PII</div>
         <div class="brand-copy">
           <h1>TW-PII-Scrubber</h1>
-          <p>台灣個資脫敏工具</p>
+          <p>台灣繁體中文個資偵測、脫敏工具</p>
         </div>
-        <div class="local-seal">資料只在本機處理</div>
       </div>
       <nav class="tabs" role="tablist" aria-label="處理類型">
         <button class="tab-button" id="tab-text" type="button" role="tab" aria-selected="true" aria-controls="panel-text">
