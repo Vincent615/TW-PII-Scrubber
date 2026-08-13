@@ -14,6 +14,11 @@
 import json
 import subprocess
 import sys
+
+# Windows 主控台預設非 UTF-8(cp950/cp1252),印中文會 UnicodeEncodeError
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
 import time
 import urllib.request
 import uuid

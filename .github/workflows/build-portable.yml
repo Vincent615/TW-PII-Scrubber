@@ -5,6 +5,9 @@ name: build-portable
 on:
   workflow_dispatch:
 
+env:
+  PYTHONUTF8: "1"
+
 jobs:
   build-portable-win64:
     runs-on: windows-latest
