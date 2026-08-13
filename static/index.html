@@ -94,7 +94,7 @@
       display: flex;
       align-items: stretch;
       justify-content: space-between;
-      min-height: 92px;
+      min-height: 104px;
       overflow: hidden;
       border: 1px solid var(--line);
       border-radius: var(--radius-lg);
@@ -140,7 +140,7 @@
 
     .tabs {
       display: grid;
-      min-width: 260px;
+      min-width: 380px;
       grid-template-columns: 1fr 1fr;
       border-left: 1px solid var(--line);
       background: #f4f8f7;
@@ -151,18 +151,20 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 12px;
+      padding: 18px 28px 26px;
       border: 0;
       color: var(--ink-soft);
       background: transparent;
-      font-size: 20px;
+      font-size: 22px;
       font-weight: 750;
       letter-spacing: 0.04em;
     }
 
     .tab-button svg {
-      width: 22px;
-      height: 22px;
+      width: 26px;
+      height: 26px;
+      flex-shrink: 0;
     }
 
     .tab-button + .tab-button {
@@ -176,9 +178,9 @@
 
     .tab-button[aria-selected="true"]::after {
       position: absolute;
-      right: 25%;
-      bottom: 18px;
-      left: 25%;
+      right: 28%;
+      bottom: 14px;
+      left: 28%;
       height: 3px;
       border-radius: 999px;
       background: var(--jade);
