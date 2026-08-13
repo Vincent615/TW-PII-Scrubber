@@ -1,0 +1,2 @@
+# Windows 批次檔需要 CRLF 行尾
+run.bat text eol=crlf

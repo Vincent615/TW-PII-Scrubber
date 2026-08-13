@@ -1,0 +1,63 @@
+# 建置 Windows 綠色版(免安裝可攜包)。手動觸發;產物上傳為 artifact。
+# 注意:首次執行前未在真實 GitHub Actions 驗證過,失敗請開 issue 修正。
+name: build-portable
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-portable-win64:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          # 與 bundle 的 embeddable 同 major/minor:pip 依執行它的
+          # 直譯器挑 wheel,版本不符會裝到錯的 ABI
+          python-version: "3.13"
+          cache: pip
+
+      - name: 快取 CKIP 模型
+        uses: actions/cache@v4
+        with:
+          path: models
+          key: ckip-bert-base-chinese-ner-50c5afc0-${{ runner.os }}
+
+      - name: 安裝相依(測試用)
+        run: pip install -r requirements-dev.txt
+
+      - name: 下載模型(未命中快取時)
+        shell: bash
+        run: |
+          if [ ! -f "models/ckiplab/bert-base-chinese-ner/config.json" ]; then
+            python scripts/download_models.py
+          fi
+
+      - name: 先跑完整測試(Windows + Python 3.13)
+        run: python -m pytest tests/
+
+      - name: 建置可攜包
+        run: python scripts/build_portable_win.py
+
+      - name: 解壓「最終 ZIP」到全新路徑
+        shell: pwsh
+        run: |
+          Expand-Archive -Path dist/TW-PII-Scrubber-portable-win64.zip -DestinationPath smoke-extract
+
+      - name: 以 bundle Python 對最終產物跑煙霧測試
+        shell: pwsh
+        run: |
+          $bundle = "smoke-extract/TW-PII-Scrubber-portable-win64"
+          & "$bundle/python/python.exe" scripts/portable_smoke.py $bundle
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: 上傳可攜包 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TW-PII-Scrubber-portable-win64
+          path: |
+            dist/TW-PII-Scrubber-portable-win64.zip
+            dist/SHA256SUMS.txt
+          retention-days: 30
+          compression-level: 0

@@ -1,0 +1,11 @@
+[project]
+name = "tw-pii-scrubber"
+version = "1.0.0"
+description = "完全本地離線的台灣個資脫敏工具(Presidio + CKIP Transformers)"
+requires-python = ">=3.11"
+readme = "README.md"
+license = "GPL-3.0-or-later"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

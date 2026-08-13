@@ -1,0 +1,2637 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>TW-PII-Scrubber 台灣個資脫敏工具</title>
+  <style>
+    :root {
+      --ink: #18333d;
+      --ink-soft: #526871;
+      --paper: #ffffff;
+      --canvas: #edf4f3;
+      --canvas-deep: #dceae8;
+      --line: #cbdad8;
+      --line-strong: #9eb8b5;
+      --jade: #0e766e;
+      --jade-dark: #075a54;
+      --jade-pale: #dff3ef;
+      --navy: #173a53;
+      --danger: #a53939;
+      --danger-pale: #fff0ef;
+      --warning: #8a5b00;
+      --warning-pale: #fff7df;
+      --warning-line: #d7ae78;
+      --shadow: 0 18px 48px rgba(24, 51, 61, 0.09);
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+      font-family: "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif;
+      color: var(--ink);
+      background: var(--canvas);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-width: 1080px;
+      min-height: 100vh;
+      margin: 0;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.68), transparent 320px),
+        var(--canvas);
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    button,
+    select,
+    input[type="file"] {
+      cursor: pointer;
+    }
+
+    button:disabled,
+    select:disabled,
+    input:disabled {
+      cursor: not-allowed;
+      opacity: 0.52;
+    }
+
+    button svg {
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+      fill: none;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 1.8;
+    }
+
+    :focus-visible {
+      outline: 3px solid rgba(14, 118, 110, 0.28);
+      outline-offset: 2px;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    .app-shell {
+      width: min(1460px, calc(100% - 56px));
+      margin: 28px auto 44px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: stretch;
+      justify-content: space-between;
+      min-height: 92px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: var(--paper);
+      box-shadow: var(--shadow);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 18px 24px;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 46px;
+      height: 54px;
+      place-items: center;
+      border-radius: 10px 10px 16px 16px;
+      color: #fff;
+      background: var(--navy);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      box-shadow: inset 0 -8px 0 var(--jade);
+    }
+
+    .brand-copy h1 {
+      margin: 0;
+      font-size: 30px;
+      line-height: 1.18;
+      letter-spacing: -0.025em;
+    }
+
+    .brand-copy p {
+      margin: 7px 0 0;
+      color: var(--ink-soft);
+      font-size: 16px;
+      letter-spacing: 0.08em;
+    }
+
+    .local-seal {
+      align-self: center;
+      margin-left: 18px;
+      padding: 8px 12px;
+      border: 1px solid #8fc9c1;
+      border-radius: 999px;
+      color: var(--jade-dark);
+      background: var(--jade-pale);
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    .local-seal::before {
+      content: "";
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      margin-right: 7px;
+      border-radius: 50%;
+      background: var(--jade);
+      box-shadow: 0 0 0 4px rgba(14, 118, 110, 0.12);
+      vertical-align: 1px;
+    }
+
+    .tabs {
+      display: grid;
+      min-width: 260px;
+      grid-template-columns: 1fr 1fr;
+      border-left: 1px solid var(--line);
+      background: #f4f8f7;
+    }
+
+    .tab-button {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 0;
+      color: var(--ink-soft);
+      background: transparent;
+      font-weight: 750;
+      letter-spacing: 0.04em;
+    }
+
+    .tab-button + .tab-button {
+      border-left: 1px solid var(--line);
+    }
+
+    .tab-button[aria-selected="true"] {
+      color: var(--jade-dark);
+      background: var(--paper);
+    }
+
+    .tab-button[aria-selected="true"]::after {
+      position: absolute;
+      right: 25%;
+      bottom: 18px;
+      left: 25%;
+      height: 3px;
+      border-radius: 999px;
+      background: var(--jade);
+      content: "";
+    }
+
+    main {
+      display: grid;
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .control-card,
+    .workspace-card,
+    .details-card,
+    .file-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: var(--paper);
+      box-shadow: 0 10px 30px rgba(24, 51, 61, 0.06);
+    }
+
+    .control-card {
+      display: grid;
+      /* 380px:字級放大後,佔位符範例「王小明 → <PERSON_1>」的最小容納寬 */
+      grid-template-columns: 380px 1fr;
+      gap: 24px;
+      padding: 20px 24px;
+    }
+
+    .control-group + .control-group {
+      padding-left: 24px;
+      border-left: 1px solid var(--line);
+    }
+
+    .control-title,
+    .eyebrow {
+      display: block;
+      margin-bottom: 10px;
+      color: var(--ink-soft);
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+    }
+
+    .entity-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+    }
+
+    .radio-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3px;
+      padding: 3px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: #eef5f4;
+    }
+
+    .mode-segment {
+      position: relative;
+      display: flex;
+      min-width: 0;
+      min-height: 58px;
+      flex-direction: column;
+      justify-content: center;
+      gap: 3px;
+      padding: 8px 12px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      color: var(--ink-soft);
+      cursor: pointer;
+      transition: border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
+    }
+
+    .mode-segment:hover {
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.62);
+    }
+
+    .mode-segment:has(input:checked) {
+      border-color: #9fc4bf;
+      color: var(--jade-dark);
+      background: var(--paper);
+      box-shadow: 0 2px 7px rgba(24, 51, 61, 0.08);
+    }
+
+    .mode-segment:has(input:focus-visible) {
+      outline: 3px solid rgba(14, 118, 110, 0.28);
+      outline-offset: 2px;
+    }
+
+    .mode-segment input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .mode-label {
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .mode-example {
+      overflow: hidden;
+      color: var(--ink-soft);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.25;
+      white-space: nowrap;
+      text-overflow: ellipsis;  /* 極窄視窗時優雅截斷,不爆框 */
+    }
+
+    .choice-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 38px;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--ink);
+      background: #f9fbfb;
+      font-size: 18px;
+      font-weight: 650;
+      transition: border-color 140ms ease, background 140ms ease, transform 140ms ease;
+    }
+
+    .choice-chip:hover {
+      border-color: var(--line-strong);
+      transform: translateY(-1px);
+    }
+
+    .choice-chip:has(input:checked) {
+      border-color: #77b8b0;
+      color: var(--jade-dark);
+      background: var(--jade-pale);
+    }
+
+    .choice-chip input {
+      width: 16px;
+      height: 16px;
+      margin: 0;
+      accent-color: var(--jade);
+    }
+
+    .entity-dot {
+      width: 9px;
+      height: 9px;
+      flex: 0 0 auto;
+      border: 1px solid transparent;
+      border-radius: 50%;
+    }
+
+    .entity-status {
+      margin: 9px 0 0;
+      color: var(--ink-soft);
+      font-size: 15px;
+    }
+
+    .entity-status.is-error {
+      color: var(--danger);
+    }
+
+    .workspace-card {
+      overflow: hidden;
+    }
+
+    .workbench {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: 470px;
+    }
+
+    .document-panel {
+      display: flex;
+      min-width: 0;
+      flex-direction: column;
+    }
+
+    .document-panel + .document-panel {
+      border-left: 1px solid var(--line);
+    }
+
+    .panel-head {
+      display: flex;
+      min-height: 72px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 15px 20px;
+      border-bottom: 1px solid var(--line);
+      background: #f8fbfa;
+    }
+
+    .panel-title-wrap {
+      min-width: 0;
+    }
+
+    .result-panel-head {
+      align-items: flex-start;
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: 0.01em;
+    }
+
+    .panel-title small {
+      display: inline-block;
+      margin-left: 7px;
+      color: var(--ink-soft);
+      font-size: 15px;
+      font-weight: 500;
+    }
+
+    .ghost-button,
+    .secondary-button,
+    .primary-button,
+    .danger-button {
+      display: inline-flex;
+      min-height: 40px;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border-radius: var(--radius-sm);
+      font-weight: 750;
+      transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
+    }
+
+    .button-label {
+      white-space: nowrap;
+    }
+
+    .ghost-button {
+      min-height: 34px;
+      padding: 6px 10px;
+      border: 1px solid var(--line);
+      color: var(--jade-dark);
+      background: var(--paper);
+      font-size: 16px;
+    }
+
+    .secondary-button,
+    .danger-button {
+      padding: 9px 15px;
+      border: 1px solid var(--line-strong);
+      color: var(--ink);
+      background: var(--paper);
+    }
+
+    .danger-button {
+      border-color: var(--warning-line);
+      color: #744300;
+      background: #fffaf0;
+    }
+
+    .primary-button {
+      padding: 10px 19px;
+      border: 1px solid var(--jade-dark);
+      color: #fff;
+      background: var(--jade);
+      box-shadow: 0 8px 18px rgba(14, 118, 110, 0.18);
+    }
+
+    .primary-cta {
+      width: 100%;
+      min-height: 58px;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 20px;
+      box-shadow: 0 10px 22px rgba(14, 118, 110, 0.22);
+    }
+
+    .primary-cta svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    .shortcut-hint {
+      margin-left: auto;
+      padding: 3px 7px;
+      border: 1px solid rgba(255, 255, 255, 0.34);
+      border-radius: 5px;
+      color: rgba(255, 255, 255, 0.82);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .primary-button:not(:disabled):hover,
+    .secondary-button:not(:disabled):hover,
+    .danger-button:not(:disabled):hover,
+    .ghost-button:not(:disabled):hover {
+      transform: translateY(-1px);
+      box-shadow: 0 7px 16px rgba(24, 51, 61, 0.12);
+    }
+
+    .text-editor,
+    .text-view {
+      width: 100%;
+      min-height: 348px;
+      flex: 1;
+      margin: 0;
+      padding: 22px;
+      border: 0;
+      border-radius: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+      font-size: 19px;
+      line-height: 1.85;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      overflow-y: auto;
+    }
+
+    .text-editor {
+      resize: none;
+    }
+
+    .text-editor::placeholder {
+      color: #91a2a7;
+    }
+
+    .text-editor:focus {
+      outline: 0;
+      box-shadow: inset 0 0 0 3px rgba(14, 118, 110, 0.16);
+    }
+
+    .empty-state {
+      display: grid;
+      color: #809397;
+      place-items: center;
+      text-align: center;
+    }
+
+    .empty-state-content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      padding: 28px;
+    }
+
+    .empty-arrow {
+      width: 90px;
+      height: 44px;
+      flex: 0 0 auto;
+      color: #adc2bf;
+      fill: none;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 1.5;
+    }
+
+    .empty-state-copy {
+      max-width: 210px;
+      color: #71888d;
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1.55;
+      text-align: left;
+    }
+
+    .panel-foot {
+      display: flex;
+      min-height: 48px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 10px 20px;
+      border-top: 1px solid var(--line);
+      color: var(--ink-soft);
+      background: #fbfdfc;
+      font-size: 15px;
+    }
+
+    .counter.is-over {
+      color: var(--danger);
+      font-weight: 800;
+    }
+
+    .input-hint {
+      color: var(--danger);
+      font-weight: 650;
+    }
+
+    .legend {
+      display: flex;
+      max-width: 430px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 6px 10px;
+    }
+
+    .legend-item,
+    .type-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      font-size: 15px;
+      font-weight: 750;
+      white-space: nowrap;
+    }
+
+    .legend-item {
+      color: var(--ink-soft);
+    }
+
+    .legend-dot {
+      width: 9px;
+      height: 9px;
+      border: 1px solid transparent;
+      border-radius: 3px;
+    }
+
+    .type-badge {
+      padding: 4px 8px;
+      border: 1px solid transparent;
+    }
+
+    .highlight {
+      padding: 0.08em 0.12em;
+      border-bottom: 2px solid transparent;
+      border-radius: 4px 4px 2px 2px;
+      font-weight: 700;
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+    }
+
+    .source-action-bar {
+      display: grid;
+      gap: 9px;
+      padding: 16px 20px;
+      border-top: 1px solid var(--line);
+      background: #f8fbfa;
+    }
+
+    .result-actions {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 7px;
+    }
+
+    .result-actions .ghost-button {
+      color: var(--ink-soft);
+    }
+
+    .mapping-action {
+      margin-left: 11px;
+      box-shadow: -7px 0 0 -6px var(--warning-line);
+    }
+
+    .mapping-action.ghost-button,
+    .mapping-action.danger-button {
+      border-color: var(--warning-line);
+      color: var(--warning);
+      background: var(--warning-pale);
+    }
+
+    .result-reveal {
+      animation: result-reveal 180ms ease-out both;
+    }
+
+    .status-line {
+      display: flex;
+      min-height: 24px;
+      align-items: center;
+      gap: 9px;
+      color: var(--ink-soft);
+      font-size: 16px;
+    }
+
+    .status-line.is-success {
+      color: var(--jade-dark);
+      font-weight: 700;
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      flex: 0 0 auto;
+      border: 2px solid rgba(255, 255, 255, 0.42);
+      border-top-color: currentColor;
+      border-radius: 50%;
+      animation: spin 750ms linear infinite;
+    }
+
+    .status-spinner {
+      border-color: rgba(14, 118, 110, 0.2);
+      border-top-color: var(--jade);
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes result-reveal {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition: none !important;
+        animation: none !important;
+      }
+    }
+
+    .error-banner {
+      margin: 14px 20px 0;
+      padding: 12px 14px;
+      border: 1px solid #e6b6b2;
+      border-radius: var(--radius-sm);
+      color: var(--danger);
+      background: var(--danger-pale);
+      font-size: 16px;
+      line-height: 1.55;
+    }
+
+    .details-card {
+      margin-top: 18px;
+      overflow: hidden;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .section-head h2,
+    .file-section h2 {
+      margin: 0;
+      font-size: 21px;
+    }
+
+    .section-note {
+      color: var(--ink-soft);
+      font-size: 15px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 16px;
+    }
+
+    th,
+    td {
+      padding: 13px 16px;
+      border-bottom: 1px solid #e4eceb;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--ink-soft);
+      background: #f8fbfa;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    tbody tr:hover {
+      background: #fbfdfc;
+    }
+
+    .no-findings {
+      padding: 26px;
+      color: var(--ink-soft);
+      text-align: center;
+    }
+
+    .file-card { overflow: hidden; }
+
+    .file-section {
+      padding: 22px 24px;
+      transition: opacity 140ms ease, background 140ms ease, box-shadow 140ms ease;
+    }
+
+    .file-section + .file-section { border-top: 1px solid var(--line); }
+
+    .file-step.is-current {
+      background: #fbfefd;
+      box-shadow: inset 4px 0 0 var(--jade);
+    }
+
+    .file-step.is-pending { opacity: 0.44; }
+
+    .file-step.is-complete .step-label {
+      color: #fff;
+      background: var(--jade);
+    }
+
+    .file-step.is-skipped {
+      color: var(--ink-soft);
+      background: #f7faf9;
+    }
+
+    #panel-file[aria-busy="true"] details { pointer-events: none; }
+
+    .file-step-content[hidden] { display: none; }
+
+    .file-section-head,
+    .batch-action-row,
+    .batch-result-head,
+    .batch-file-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .file-section-head { margin-bottom: 16px; }
+
+    .step-label {
+      display: inline-flex;
+      width: 28px;
+      height: 28px;
+      align-items: center;
+      justify-content: center;
+      margin-right: 10px;
+      border-radius: 8px;
+      color: var(--jade-dark);
+      background: var(--jade-pale);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 15px;
+      font-weight: 900;
+      vertical-align: 2px;
+    }
+
+    .file-picker {
+      position: relative;
+      display: grid;
+      min-height: 190px;
+      place-items: center;
+      padding: 26px;
+      border: 2px dashed #8fb5b1;
+      border-radius: var(--radius-md);
+      background: #f6fbfa;
+      cursor: pointer;
+      text-align: center;
+      transition: border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
+    }
+
+    .file-picker:hover,
+    .file-picker.is-dragging {
+      border-color: var(--jade);
+      background: #eef9f7;
+      box-shadow: inset 0 0 0 3px rgba(14, 118, 110, 0.08);
+    }
+
+    .upload-icon {
+      width: 52px;
+      height: 52px;
+      margin-bottom: 10px;
+      color: var(--jade);
+      fill: none;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 1.45;
+    }
+
+    .file-picker strong { display: block; margin-bottom: 6px; font-size: 20px; }
+    .file-picker p { margin: 0 0 12px; color: var(--ink-soft); font-size: 16px; }
+
+    .dropzone-action {
+      display: inline-flex;
+      min-height: 38px;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-sm);
+      color: var(--jade-dark);
+      background: var(--paper);
+      font-size: 16px;
+      font-weight: 750;
+    }
+
+    .dropzone-action svg { width: 17px; height: 17px; }
+
+    .visually-hidden {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0 !important;
+      border: 0 !important;
+      margin: -1px !important;
+      clip: rect(0 0 0 0) !important;
+      clip-path: inset(50%) !important;
+      overflow: hidden !important;
+      white-space: nowrap !important;
+    }
+
+    .batch-file-summary { min-height: 20px; margin: 12px 0 0; color: var(--jade-dark); font-size: 16px; font-weight: 750; }
+    .batch-file-list { display: grid; gap: 10px; margin-top: 14px; }
+
+    .batch-file-row {
+      display: grid;
+      grid-template-columns: 44px minmax(220px, 1fr) minmax(150px, .55fr) minmax(190px, .65fr) auto;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: #fbfdfc;
+    }
+
+    .batch-file-row.is-error { border-color: #e2aaa6; background: var(--danger-pale); }
+    .file-type-icon { position: relative; display: grid; width: 40px; height: 40px; place-items: center; border-radius: 9px; color: var(--jade-dark); background: var(--jade-pale); }
+    .file-type-icon svg { width: 23px; height: 23px; margin-top: -5px; fill: none; stroke: currentColor; stroke-width: 1.65; }
+    .file-type-icon-label { position: absolute; right: 0; bottom: 3px; left: 0; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 9px; font-weight: 900; letter-spacing: .04em; text-align: center; }
+    .file-type-icon.is-xlsx { color: #287348; background: #e4f3e9; }
+    .file-type-icon.is-csv { color: #46698e; background: #e7eef8; }
+    .batch-file-name { overflow: hidden; font-size: 18px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+    .batch-file-size,
+    .batch-file-preview,
+    .batch-file-error { margin-top: 3px; color: var(--ink-soft); font-size: 15px; line-height: 1.45; }
+    .batch-file-error { color: var(--danger); }
+
+    .status-chip {
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      color: var(--ink-soft);
+      background: #e7efef;
+      font-size: 14px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .status-chip.is-success { color: var(--jade-dark); background: var(--jade-pale); }
+    .status-chip.is-error { color: var(--danger); background: #f8deda; }
+    .status-chip.is-processing { color: var(--navy); background: #e4edf5; }
+    .status-chip svg { width: 13px; height: 13px; }
+
+    .icon-button {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      color: var(--ink-soft);
+      background: transparent;
+    }
+
+    .icon-button:hover { border-color: var(--line); color: var(--danger); background: var(--paper); }
+    .icon-button svg { width: 16px; height: 16px; }
+
+    .strategy-table { overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius-md); }
+    .strategy-row { display: grid; grid-template-columns: minmax(240px, 1fr) 180px 180px; align-items: center; gap: 14px; padding: 11px 14px; background: #fbfdfc; }
+    .strategy-row + .strategy-row { border-top: 1px solid var(--line); }
+    .strategy-row.is-head { color: var(--ink-soft); background: #f1f6f5; font-size: 14px; font-weight: 800; letter-spacing: .06em; }
+    .column-name { overflow: hidden; font-size: 18px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+
+    .strategy-select {
+      width: 132px;
+      flex: 0 0 auto;
+      padding: 7px 9px;
+      border: 1px solid var(--line-strong);
+      border-radius: 7px;
+      color: var(--ink);
+      background: var(--paper);
+      font-size: 15px;
+    }
+
+    .override-list { display: grid; gap: 8px; margin-top: 14px; }
+    .override-card { border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--paper); }
+    .override-card summary { padding: 11px 13px; cursor: pointer; font-size: 16px; font-weight: 750; }
+    .override-card-body { display: grid; gap: 8px; padding: 0 13px 13px; }
+    .override-row { display: grid; grid-template-columns: minmax(180px, 1fr) 190px; align-items: center; gap: 12px; padding-top: 8px; border-top: 1px solid #e6eeed; }
+    .override-row .strategy-select { width: 190px; }
+    .txt-file-note { padding: 11px 13px; border: 1px solid var(--line); border-radius: var(--radius-sm); color: var(--ink-soft); background: #f7faf9; font-size: 16px; }
+
+    .txt-note,
+    .privacy-note {
+      padding: 12px 14px;
+      border-radius: var(--radius-sm);
+      color: var(--ink-soft);
+      background: #eef5f4;
+      font-size: 16px;
+      line-height: 1.55;
+    }
+
+    .privacy-note {
+      color: var(--warning);
+      background: var(--warning-pale);
+    }
+
+    .batch-action-row { justify-content: flex-start; }
+    .batch-process-button { min-width: 260px; min-height: 52px; font-size: 19px; }
+    .batch-progress { margin-top: 16px; }
+    .batch-progress-track { height: 10px; overflow: hidden; border-radius: 999px; background: #dce8e6; }
+    .batch-progress-bar { width: 0; height: 100%; border-radius: inherit; background: var(--jade); transition: width 180ms ease; }
+    .batch-progress-text { display: block; margin-top: 8px; color: var(--ink-soft); font-size: 15px; font-weight: 700; }
+    .batch-summary { display: flex; flex-wrap: wrap; gap: 10px 18px; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--radius-md); background: #f7faf9; }
+    .batch-summary strong { color: var(--jade-dark); }
+    .entity-totals { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 12px; }
+    .entity-total { display: inline-flex; align-items: center; gap: 7px; color: var(--ink-soft); font-size: 15px; }
+    .entity-total-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .batch-result-list { display: grid; gap: 9px; margin-top: 16px; }
+    .batch-result-row { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(190px, .7fr) auto; align-items: center; gap: 14px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius-sm); }
+    .batch-result-row.is-error { border-color: #e2aaa6; background: var(--danger-pale); }
+    .batch-file-actions { justify-content: flex-end; gap: 8px; }
+    .small-button { min-height: 34px; padding: 6px 10px; font-size: 15px; }
+    .file-result-content .privacy-note { margin: 14px 0 0; }
+
+    .footer-note {
+      margin: 18px 0 0;
+      color: var(--ink-soft);
+      font-size: 15px;
+      line-height: 1.7;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">PII</div>
+        <div class="brand-copy">
+          <h1>TW-PII-Scrubber</h1>
+          <p>台灣個資脫敏工具</p>
+        </div>
+        <div class="local-seal">資料只在本機處理</div>
+      </div>
+      <nav class="tabs" role="tablist" aria-label="處理類型">
+        <button class="tab-button" id="tab-text" type="button" role="tab" aria-selected="true" aria-controls="panel-text">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h7l4 4V20.5H7z"/><path d="M14 3.5v4h4M9.5 12h6M9.5 15.5h6"/></svg>
+          <span>文字</span>
+        </button>
+        <button class="tab-button" id="tab-file" type="button" role="tab" aria-selected="false" aria-controls="panel-file">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3.5h8.5l3 3V17H8z"/><path d="M16.5 3.5v3h3M5 7v13.5h11.5M10.5 10h6M10.5 13.5h6"/></svg>
+          <span>批次處理</span>
+        </button>
+      </nav>
+    </header>
+
+    <main>
+      <section class="control-card" aria-label="脫敏設定">
+        <div class="control-group">
+          <span class="control-title">脫敏模式</span>
+          <div class="radio-row">
+            <label class="mode-segment">
+              <input type="radio" name="mode" value="mask" checked>
+              <span class="mode-label">遮罩</span>
+              <span class="mode-example">王小明 → 王○○</span>
+            </label>
+            <label class="mode-segment">
+              <input type="radio" name="mode" value="placeholder">
+              <span class="mode-label">佔位符</span>
+              <span class="mode-example">王小明 → &lt;PERSON_1&gt;</span>
+            </label>
+          </div>
+        </div>
+        <div class="control-group">
+          <span class="control-title">偵測類型</span>
+          <div class="entity-list" id="entity-list" aria-busy="true"></div>
+          <p class="entity-status" id="entity-status" role="status">正在載入偵測類型…</p>
+        </div>
+      </section>
+
+      <section id="panel-text" role="tabpanel" aria-labelledby="tab-text">
+        <div class="workspace-card">
+          <div class="workbench">
+            <article class="document-panel">
+              <div class="panel-head">
+                <h2 class="panel-title">原文 <small id="source-mode-note">編輯中</small></h2>
+                <button class="ghost-button" id="edit-source" type="button" hidden>
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 20 4.2-1 10-10-3.2-3.2-10 10zM13.8 7l3.2 3.2"/></svg>
+                  <span>切回編輯</span>
+                </button>
+              </div>
+              <textarea class="text-editor" id="source-input" aria-label="待脫敏原文" placeholder="請貼上需要脫敏的文字，單次上限 50,000 字。" spellcheck="false"></textarea>
+              <div class="text-view" id="source-view" tabindex="0" aria-label="原文高亮對照" hidden></div>
+              <div class="panel-foot">
+                <span class="counter" id="char-count">0 / 50,000 字</span>
+                <span class="input-hint" id="input-hint">請先輸入文字</span>
+              </div>
+              <div class="source-action-bar">
+                <button class="primary-button primary-cta" id="start-scrub" type="button" disabled title="請先輸入文字">
+                  <svg id="text-button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8 19 5.5v5.8c0 4.3-2.7 7.9-7 9.9-4.3-2-7-5.6-7-9.9V5.5z"/><path d="m10 8.5 5 3.2-5 3.2z"/></svg>
+                  <span class="spinner" id="text-button-spinner" aria-hidden="true" hidden></span>
+                  <span class="button-label" id="text-button-label">開始脫敏</span>
+                  <span class="shortcut-hint" aria-label="Command 或 Control 加 Enter">⌘↵</span>
+                </button>
+                <div class="status-line" id="text-status" role="status" aria-live="polite"></div>
+              </div>
+            </article>
+
+            <article class="document-panel">
+              <div class="panel-head result-panel-head">
+                <div class="panel-title-wrap">
+                  <h2 class="panel-title">脫敏結果 <small id="result-mode-note">尚未處理</small></h2>
+                </div>
+                <div class="result-actions" id="text-result-actions" hidden>
+                  <button class="ghost-button" id="copy-result" type="button" disabled title="請先完成脫敏">
+                    <svg id="copy-button-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="11" rx="1.5"/><path d="M16 8V5H5v11h3"/></svg>
+                    <svg id="copy-success-icon" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="m5 12.5 4.2 4.2L19 7"/></svg>
+                    <span id="copy-button-label">複製結果</span>
+                  </button>
+                  <button class="ghost-button" id="download-text-report" type="button" disabled title="請先完成脫敏">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11M7.5 10.5 12 15l4.5-4.5M4 18v2h16v-2"/></svg>
+                    <span>下載報告</span>
+                  </button>
+                  <button class="ghost-button mapping-action" id="download-text-mapping" type="button" hidden disabled title="請先以佔位符模式完成脫敏">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="12" r="3.5"/><path d="M11.5 12H21M17 12v3M20 12v2"/></svg>
+                    <span>下載映射表</span>
+                  </button>
+                </div>
+              </div>
+              <div class="text-view empty-state" id="result-view" tabindex="0" aria-live="polite">
+                <div class="empty-state-content">
+                  <svg class="empty-arrow" viewBox="0 0 90 44" aria-hidden="true"><path d="M84 22H10M25 7 10 22l15 15"/></svg>
+                  <span class="empty-state-copy">貼上文字後按「開始脫敏」</span>
+                </div>
+              </div>
+              <div class="panel-foot">
+                <div class="legend" id="text-legend" aria-label="高亮圖例"></div>
+                <span id="finding-count">0 筆偵測</span>
+              </div>
+            </article>
+          </div>
+
+          <div class="error-banner" id="text-error" role="alert" hidden></div>
+        </div>
+
+        <section class="details-card" id="text-details" hidden>
+          <div class="section-head">
+            <h2>偵測明細</h2>
+            <span class="section-note">原值欄位已遮罩，避免報告成為個資副本</span>
+          </div>
+          <div class="table-wrap" id="findings-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">類型</th>
+                  <th scope="col">遮罩後原值</th>
+                  <th scope="col">位置</th>
+                  <th scope="col">信心</th>
+                  <th scope="col">規則</th>
+                </tr>
+              </thead>
+              <tbody id="findings-body"></tbody>
+            </table>
+          </div>
+          <div class="no-findings" id="no-findings" hidden>未偵測到所選類型的個資。</div>
+        </section>
+      </section>
+
+      <section id="panel-file" role="tabpanel" aria-labelledby="tab-file" hidden>
+        <div class="file-card">
+          <section class="file-section file-step is-current" id="file-step-one">
+            <div class="file-section-head">
+              <h2><span class="step-label">01</span>選擇檔案</h2>
+              <span class="section-note" id="batch-file-count">0 / 20 檔 · 0 B</span>
+            </div>
+            <label class="file-picker" id="file-dropzone" for="file-input">
+              <div>
+                <svg class="upload-icon" viewBox="0 0 64 64" aria-hidden="true"><path d="M18 48H13a9 9 0 0 1-1-17.9A18 18 0 0 1 46.5 24 12 12 0 0 1 49 48h-4"/><path d="M32 22v27M23 31l9-9 9 9"/></svg>
+                <strong>加入需要脫敏的本機檔案</strong>
+                <p>可分次拖放或選取 1–20 個 .txt、.csv、.xlsx</p>
+                <span class="dropzone-action">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V5M7.5 9.5 12 5l4.5 4.5M4 19h16"/></svg>
+                  選擇多個檔案
+                </span>
+                <input class="file-input visually-hidden" id="file-input" type="file" accept=".txt,.csv,.xlsx" multiple>
+                <p class="batch-file-summary" id="batch-file-summary">尚未加入檔案</p>
+              </div>
+            </label>
+            <div class="batch-file-list" id="batch-file-list"></div>
+            <div class="status-line" id="file-status" role="status" aria-live="polite"></div>
+            <div class="error-banner" id="file-error" role="alert" hidden></div>
+          </section>
+
+          <section class="file-section file-step is-pending" id="file-strategy-section">
+            <div class="file-section-head">
+              <h2><span class="step-label">02</span>欄位策略</h2>
+              <span class="section-note">同名欄位一次設定，可逐檔覆寫</span>
+            </div>
+            <div class="file-step-content" id="file-strategy-content" hidden>
+              <div id="global-strategy-table"></div>
+              <div class="override-list" id="file-overrides"></div>
+              <div class="txt-note" id="txt-only-note" hidden>純文字檔免設定：所有檔案皆使用全文 NER。</div>
+            </div>
+          </section>
+
+          <section class="file-section file-step is-pending" id="file-process-section">
+            <div class="file-section-head">
+              <h2><span class="step-label">03</span>開始批次脫敏</h2>
+              <span class="section-note">依序處理，單檔失敗不會中斷</span>
+            </div>
+            <div class="file-step-content" id="file-process-content" hidden>
+              <div class="batch-action-row">
+                <button class="primary-button batch-process-button" id="start-batch-scrub" type="button" disabled title="請先加入可處理檔案">
+                  <svg id="file-button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8 19 5.5v5.8c0 4.3-2.7 7.9-7 9.9-4.3-2-7-5.6-7-9.9V5.5z"/><path d="m10 8.5 5 3.2-5 3.2z"/></svg>
+                  <span class="spinner status-spinner" id="file-button-spinner" aria-hidden="true" hidden></span>
+                  <span class="button-label" id="file-button-label">開始批次脫敏</span>
+                </button>
+                <button class="secondary-button" id="cancel-batch" type="button" hidden>
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+                  <span>取消後續檔案</span>
+                </button>
+              </div>
+              <div class="batch-progress" id="batch-progress" hidden>
+                <div class="batch-progress-track" id="batch-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0">
+                  <div class="batch-progress-bar" id="batch-progress-bar"></div>
+                </div>
+                <span class="batch-progress-text" id="batch-progress-text">0/0 · 已偵測 0 筆</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="file-section file-step is-pending" id="file-result-section">
+            <div class="file-section-head">
+              <h2><span class="step-label">04</span>結果與下載</h2>
+              <span class="section-note" id="file-result-note"></span>
+            </div>
+            <div class="file-step-content file-result-content" id="file-result-content" hidden>
+              <div class="batch-result-head">
+                <button class="primary-button" id="download-all-zip" type="button" disabled>
+                  <svg id="zip-button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5zM9 4v4h3v3H9v3h3v3H9"/><path d="M15 14v4M13 16h4"/></svg>
+                  <span class="spinner status-spinner" id="zip-button-spinner" aria-hidden="true" hidden></span>
+                  <span id="zip-button-label">下載全部（ZIP）</span>
+                </button>
+                <button class="secondary-button" id="reset-batch" type="button">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8V4m0 0h4M5 4l3.2 3.2A7 7 0 1 1 5.7 15"/></svg>
+                  <span>全部清除／重新開始</span>
+                </button>
+              </div>
+              <div class="batch-summary" id="batch-summary"></div>
+              <div class="entity-totals" id="batch-entity-totals"></div>
+              <div class="batch-result-list" id="batch-result-list"></div>
+              <div class="error-banner" id="bundle-error" role="alert" hidden></div>
+              <p class="privacy-note" id="file-privacy-note" hidden>映射表含原始個資，只保留在目前頁面記憶體中；需逐檔確認下載，絕不放入 ZIP 或批次報告。</p>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <p class="footer-note">所有文字與檔案只送往目前這台電腦上的本地服務；本頁不載入外部資源，也不會保存映射表。</p>
+  </div>
+
+  <script>
+    'use strict';
+
+    const MAX_TEXT_LENGTH = 50000;
+    const MAX_BATCH_FILES = 20;
+    const ENTITY_STYLES = Object.freeze({
+      PERSON: { background: '#fde4ea', border: '#d95f7b', text: '#7c2740' },
+      TW_NATIONAL_ID: { background: '#fff0c7', border: '#c88712', text: '#714806' },
+      TW_MOBILE: { background: '#dff3f7', border: '#2b94a8', text: '#175967' },
+      TW_PHONE: { background: '#e4ecfb', border: '#557fc0', text: '#2e4f82' },
+      TW_UBN: { background: '#eee5fa', border: '#8965b5', text: '#553b79' },
+      EMAIL_ADDRESS: { background: '#e0f2e6', border: '#4b9565', text: '#28613c' },
+      ORG: { background: '#e9e6fb', border: '#7168bd', text: '#454085' },
+      LOC: { background: '#ffe8d5', border: '#d47b36', text: '#7a4218' },
+      BIRTHDAY: { background: '#fbe9e0', border: '#c06a4a', text: '#6e3a24' },
+      TW_POLICY_NO: { background: '#eef0d9', border: '#8f9a3d', text: '#4f5719' },
+      CREDIT_CARD: { background: '#f7e2f4', border: '#b0569f', text: '#6b2e60' },
+      AGENT_CODE: { background: '#e6eaf2', border: '#67769e', text: '#3a4463' },
+      TW_BANK_ACCOUNT: { background: '#e4e4f9', border: '#5d5dc4', text: '#33337a' },
+      DEFAULT: { background: '#e7efef', border: '#6f9090', text: '#365757' }
+    });
+
+    const state = {
+      entitiesReady: false,
+      entityLabels: new Map(),
+      activeTab: 'text',
+      textBusy: false,
+      textSource: '',
+      textResult: null,
+      textFindings: [],
+      textReport: null,
+      textMapping: null,
+      textResultMode: null,
+      fileBusy: false,
+      fileBusyPhase: null,
+      files: [],
+      nextFileId: 1,
+      globalStrategies: Object.create(null),
+      batchHasRun: false,
+      batchCancelRequested: false,
+      batchMode: null,
+      batchEntities: []
+    };
+
+    const byId = (id) => document.getElementById(id);
+    const elements = {
+      tabText: byId('tab-text'),
+      tabFile: byId('tab-file'),
+      panelText: byId('panel-text'),
+      panelFile: byId('panel-file'),
+      entityList: byId('entity-list'),
+      entityStatus: byId('entity-status'),
+      sourceInput: byId('source-input'),
+      sourceView: byId('source-view'),
+      sourceModeNote: byId('source-mode-note'),
+      editSource: byId('edit-source'),
+      charCount: byId('char-count'),
+      inputHint: byId('input-hint'),
+      resultView: byId('result-view'),
+      resultModeNote: byId('result-mode-note'),
+      textLegend: byId('text-legend'),
+      findingCount: byId('finding-count'),
+      textResultActions: byId('text-result-actions'),
+      startScrub: byId('start-scrub'),
+      textButtonIcon: byId('text-button-icon'),
+      textButtonSpinner: byId('text-button-spinner'),
+      textButtonLabel: byId('text-button-label'),
+      copyResult: byId('copy-result'),
+      copyButtonIcon: byId('copy-button-icon'),
+      copySuccessIcon: byId('copy-success-icon'),
+      copyButtonLabel: byId('copy-button-label'),
+      downloadTextReport: byId('download-text-report'),
+      downloadTextMapping: byId('download-text-mapping'),
+      textStatus: byId('text-status'),
+      textError: byId('text-error'),
+      textDetails: byId('text-details'),
+      findingsTableWrap: byId('findings-table-wrap'),
+      findingsBody: byId('findings-body'),
+      noFindings: byId('no-findings'),
+      fileInput: byId('file-input'),
+      fileDropzone: byId('file-dropzone'),
+      batchFileCount: byId('batch-file-count'),
+      batchFileSummary: byId('batch-file-summary'),
+      batchFileList: byId('batch-file-list'),
+      fileStepOne: byId('file-step-one'),
+      fileStrategySection: byId('file-strategy-section'),
+      fileStrategyContent: byId('file-strategy-content'),
+      globalStrategyTable: byId('global-strategy-table'),
+      fileOverrides: byId('file-overrides'),
+      txtOnlyNote: byId('txt-only-note'),
+      fileStatus: byId('file-status'),
+      fileError: byId('file-error'),
+      fileProcessSection: byId('file-process-section'),
+      fileProcessContent: byId('file-process-content'),
+      startBatchScrub: byId('start-batch-scrub'),
+      cancelBatch: byId('cancel-batch'),
+      fileButtonIcon: byId('file-button-icon'),
+      fileButtonSpinner: byId('file-button-spinner'),
+      fileButtonLabel: byId('file-button-label'),
+      batchProgress: byId('batch-progress'),
+      batchProgressTrack: byId('batch-progress-track'),
+      batchProgressBar: byId('batch-progress-bar'),
+      batchProgressText: byId('batch-progress-text'),
+      fileResultSection: byId('file-result-section'),
+      fileResultContent: byId('file-result-content'),
+      fileResultNote: byId('file-result-note'),
+      downloadAllZip: byId('download-all-zip'),
+      zipButtonIcon: byId('zip-button-icon'),
+      zipButtonSpinner: byId('zip-button-spinner'),
+      zipButtonLabel: byId('zip-button-label'),
+      resetBatch: byId('reset-batch'),
+      batchSummary: byId('batch-summary'),
+      batchEntityTotals: byId('batch-entity-totals'),
+      batchResultList: byId('batch-result-list'),
+      bundleError: byId('bundle-error'),
+      filePrivacyNote: byId('file-privacy-note')
+    };
+
+    const resultEmptyState = elements.resultView.firstElementChild.cloneNode(true);
+    let copyFeedbackTimer = null;
+    let dropzoneDragDepth = 0;
+
+    function createElement(tagName, className, text) {
+      const node = document.createElement(tagName);
+      if (className) node.className = className;
+      if (text !== undefined) node.textContent = text;
+      return node;
+    }
+
+    function currentMode() {
+      const selected = document.querySelector('input[name="mode"]:checked');
+      return selected ? selected.value : 'mask';
+    }
+
+    function selectedEntities() {
+      return Array.from(elements.entityList.querySelectorAll('input[type="checkbox"]:checked'), (input) => input.value);
+    }
+
+    function codePointLength(text) {
+      return Array.from(text).length;
+    }
+
+    function entityStyle(entityType) {
+      return Object.prototype.hasOwnProperty.call(ENTITY_STYLES, entityType)
+        ? ENTITY_STYLES[entityType]
+        : ENTITY_STYLES.DEFAULT;
+    }
+
+    function entityLabel(entityType) {
+      return state.entityLabels.get(entityType) || entityType || '未知類型';
+    }
+
+    function applyEntityStyle(node, entityType) {
+      const style = entityStyle(entityType);
+      node.style.backgroundColor = style.background;
+      node.style.borderColor = style.border;
+      node.style.color = style.text;
+    }
+
+    function applyEntityDotStyle(node, entityType) {
+      const style = entityStyle(entityType);
+      node.style.backgroundColor = style.border;
+      node.style.borderColor = style.border;
+    }
+
+    function revealOnce(element) {
+      element.classList.remove('result-reveal');
+      void element.offsetWidth;
+      element.classList.add('result-reveal');
+    }
+
+    function resetCopyFeedback() {
+      if (copyFeedbackTimer !== null) {
+        window.clearTimeout(copyFeedbackTimer);
+        copyFeedbackTimer = null;
+      }
+      elements.copyButtonIcon.hidden = false;
+      elements.copySuccessIcon.hidden = true;
+      elements.copyButtonLabel.textContent = '複製結果';
+    }
+
+    function setStepState(element, stepState) {
+      element.classList.toggle('is-current', stepState === 'current');
+      element.classList.toggle('is-complete', stepState === 'complete');
+      element.classList.toggle('is-pending', stepState === 'pending');
+      if (stepState === 'current') {
+        element.setAttribute('aria-current', 'step');
+      } else {
+        element.removeAttribute('aria-current');
+      }
+    }
+
+    function updateFileSteps() {
+      const validItems = state.files.filter((item) => item.preview && !item.previewError);
+      const previewing = state.files.some((item) => item.status === 'previewing');
+      const hasTableFiles = validItems.some((item) => item.preview.filetype !== 'txt');
+      elements.fileStrategySection.classList.toggle('is-skipped', validItems.length > 0 && !hasTableFiles);
+      elements.fileStrategyContent.hidden = validItems.length === 0;
+      elements.fileProcessContent.hidden = validItems.length === 0 || previewing;
+
+      if (state.batchHasRun) {
+        setStepState(elements.fileStepOne, 'complete');
+        setStepState(elements.fileStrategySection, 'complete');
+        setStepState(elements.fileProcessSection, 'complete');
+        setStepState(elements.fileResultSection, 'current');
+      } else if (validItems.length > 0 && !previewing) {
+        setStepState(elements.fileStepOne, 'complete');
+        setStepState(elements.fileStrategySection, 'complete');
+        setStepState(elements.fileProcessSection, 'current');
+        setStepState(elements.fileResultSection, 'pending');
+      } else {
+        setStepState(elements.fileStepOne, 'current');
+        setStepState(elements.fileStrategySection, 'pending');
+        setStepState(elements.fileProcessSection, 'pending');
+        setStepState(elements.fileResultSection, 'pending');
+      }
+    }
+
+    function normalizeRanges(text, findings, startKey, endKey) {
+      const length = codePointLength(text);
+      return findings
+        .map((finding) => ({
+          finding,
+          start: Number(finding[startKey]),
+          end: Number(finding[endKey])
+        }))
+        .filter((range) => Number.isInteger(range.start) && Number.isInteger(range.end))
+        .map((range) => ({
+          finding: range.finding,
+          start: Math.max(0, Math.min(length, range.start)),
+          end: Math.max(0, Math.min(length, range.end))
+        }))
+        .filter((range) => range.end > range.start)
+        .sort((a, b) => a.start - b.start || b.end - a.end);
+    }
+
+    function renderHighlightedText(container, text, findings, startKey, endKey) {
+      const characters = Array.from(text);
+      const fragment = document.createDocumentFragment();
+      const ranges = normalizeRanges(text, findings, startKey, endKey);
+      let cursor = 0;
+
+      for (const range of ranges) {
+        if (range.start < cursor) continue;
+        if (range.start > cursor) {
+          fragment.append(document.createTextNode(characters.slice(cursor, range.start).join('')));
+        }
+        const highlight = createElement('span', 'highlight');
+        highlight.textContent = characters.slice(range.start, range.end).join('');
+        highlight.title = entityLabel(range.finding.entity_type);
+        applyEntityStyle(highlight, range.finding.entity_type);
+        fragment.append(highlight);
+        cursor = range.end;
+      }
+
+      if (cursor < characters.length) {
+        fragment.append(document.createTextNode(characters.slice(cursor).join('')));
+      }
+      container.replaceChildren(fragment);
+    }
+
+    function renderLegend(findings) {
+      elements.textLegend.replaceChildren();
+      const seen = new Set();
+      for (const finding of findings) {
+        const type = finding.entity_type;
+        if (!type || seen.has(type)) continue;
+        seen.add(type);
+        const item = createElement('span', 'legend-item');
+        const dot = createElement('span', 'legend-dot');
+        applyEntityDotStyle(dot, type);
+        item.append(dot, document.createTextNode(entityLabel(type)));
+        elements.textLegend.append(item);
+      }
+    }
+
+    function renderFindings(findings) {
+      elements.findingsBody.replaceChildren();
+      elements.textDetails.hidden = false;
+      elements.findingsTableWrap.hidden = findings.length === 0;
+      elements.noFindings.hidden = findings.length !== 0;
+
+      for (const finding of findings) {
+        const row = document.createElement('tr');
+        const typeCell = document.createElement('td');
+        const badge = createElement('span', 'type-badge', entityLabel(finding.entity_type));
+        applyEntityStyle(badge, finding.entity_type);
+        typeCell.append(badge);
+
+        const originalCell = createElement('td', '', String(finding.original_masked ?? '—'));
+        const start = Number.isInteger(Number(finding.start)) ? Number(finding.start) : '—';
+        const end = Number.isInteger(Number(finding.end)) ? Number(finding.end) : '—';
+        const positionCell = createElement('td', '', `${start}–${end}`);
+        const numericScore = Number(finding.score);
+        const scoreCell = createElement('td', '', Number.isFinite(numericScore) ? numericScore.toFixed(2) : '—');
+        const recognizerCell = createElement('td', '', String(finding.recognizer ?? '—'));
+        row.append(typeCell, originalCell, positionCell, scoreCell, recognizerCell);
+        elements.findingsBody.append(row);
+      }
+    }
+
+    function showError(element, message) {
+      element.textContent = message;
+      element.hidden = false;
+    }
+
+    function clearError(element) {
+      element.textContent = '';
+      element.hidden = true;
+    }
+
+    function setStatus(element, message, options = {}) {
+      element.replaceChildren();
+      element.classList.toggle('is-success', Boolean(options.success));
+      if (options.busy) {
+        const spinner = createElement('span', 'spinner status-spinner');
+        spinner.setAttribute('aria-hidden', 'true');
+        element.append(spinner);
+      }
+      if (message) element.append(document.createTextNode(message));
+    }
+
+    async function readJsonResponse(response) {
+      let data = null;
+      try {
+        data = await response.json();
+      } catch (_error) {
+        data = null;
+      }
+
+      if (!response.ok) {
+        const error = new Error(apiErrorMessage(response.status, data));
+        error.status = response.status;
+        throw error;
+      }
+      if (data === null) throw new Error('本地服務回傳了無法讀取的資料。');
+      return data;
+    }
+
+    function apiErrorMessage(status, data) {
+      if (data && typeof data.detail === 'string' && data.detail.trim()) return data.detail;
+      if (status === 413) return '文字過長，請分段處理（單次上限 5 萬字）。';
+      if (status === 408) return '處理逾時，請縮短文字後再試。';
+      if (status === 422) return '輸入內容無法處理，請檢查後再試。';
+      return `本地服務處理失敗（HTTP ${status}）。`;
+    }
+
+    function readableError(error) {
+      if (error instanceof TypeError) return '無法連線到本地服務，請確認 TW-PII-Scrubber 已啟動。';
+      return error && error.message ? error.message : '處理失敗，請稍後再試。';
+    }
+
+    function refreshControls() {
+      const textLength = codePointLength(elements.sourceInput.value);
+      const hasText = elements.sourceInput.value.trim().length > 0;
+      const overLimit = textLength > MAX_TEXT_LENGTH;
+      const selected = selectedEntities();
+      const hasEntities = selected.length > 0;
+
+      // 偵測類型狀態行:即時反映勾選數;已有結果但勾選變更時提醒需重跑
+      if (state.entitiesReady) {
+        const total = state.entityLabels.size;
+        let entityText;
+        if (selected.length === 0) {
+          entityText = '未選擇任何偵測類型——至少勾選一種才能開始。';
+        } else if (selected.length === total) {
+          entityText = `將偵測全部 ${total} 種類型。`;
+        } else {
+          entityText = `將偵測 ${selected.length} / ${total} 種類型；未勾選的不會被遮罩。`;
+        }
+        const currentKey = selected.slice().sort().join(',');
+        if (state.lastRunEntitiesKey && currentKey !== state.lastRunEntitiesKey) {
+          entityText += '（勾選已變更，重新執行後才會套用）';
+        }
+        elements.entityStatus.textContent = entityText;
+        elements.entityStatus.classList.toggle('is-error', selected.length === 0);
+      }
+      const anyBusy = state.textBusy || state.fileBusy;
+      const validBatchItems = state.files.filter((item) => item.preview && !item.previewError);
+      const previewsPending = state.files.some((item) => item.status === 'previewing');
+      const successfulItems = state.files.filter((item) => item.status === 'success');
+
+      elements.charCount.textContent = `${textLength.toLocaleString('zh-TW')} / 50,000 字`;
+      elements.charCount.classList.toggle('is-over', overLimit);
+      if (!hasText) {
+        elements.inputHint.textContent = '請先輸入文字';
+        elements.inputHint.hidden = false;
+      } else if (overLimit) {
+        elements.inputHint.textContent = '請分段處理（單次上限 5 萬字）';
+        elements.inputHint.hidden = false;
+      } else if (!hasEntities && state.entitiesReady) {
+        elements.inputHint.textContent = '請至少選擇一種偵測類型';
+        elements.inputHint.hidden = false;
+      } else {
+        elements.inputHint.hidden = true;
+      }
+
+      elements.startScrub.disabled = anyBusy || !state.entitiesReady || !hasEntities || !hasText || overLimit;
+      elements.startBatchScrub.disabled = anyBusy || !state.entitiesReady || !hasEntities || validBatchItems.length === 0 || previewsPending;
+      elements.tabText.disabled = anyBusy;
+      elements.tabFile.disabled = anyBusy;
+      elements.tabText.title = anyBusy ? '處理中，暫時無法切換分頁' : '切換至文字脫敏';
+      elements.tabFile.title = anyBusy ? '處理中，暫時無法切換分頁' : '切換至檔案脫敏';
+      elements.fileInput.disabled = anyBusy || state.files.length >= MAX_BATCH_FILES;
+      elements.sourceInput.disabled = anyBusy;
+      elements.editSource.disabled = anyBusy;
+      elements.editSource.title = anyBusy ? '處理中，請稍候' : '切回原文編輯';
+      elements.fileDropzone.setAttribute('aria-disabled', String(anyBusy || state.files.length >= MAX_BATCH_FILES));
+      elements.panelFile.setAttribute('aria-busy', String(state.fileBusy));
+      document.querySelectorAll('input[name="mode"], #entity-list input, .strategy-select').forEach((control) => {
+        control.disabled = anyBusy;
+      });
+      document.querySelectorAll('.batch-remove').forEach((control) => {
+        control.disabled = anyBusy;
+      });
+      document.querySelectorAll('.batch-file-actions button').forEach((control) => {
+        control.disabled = anyBusy;
+      });
+
+      elements.textResultActions.hidden = state.textResult === null;
+      elements.copyResult.disabled = state.textResult === null || anyBusy;
+      elements.downloadTextReport.disabled = !state.textReport || anyBusy;
+      elements.downloadTextMapping.hidden = currentMode() !== 'placeholder';
+      elements.downloadTextMapping.disabled = !state.textMapping || anyBusy;
+      elements.downloadAllZip.disabled = !state.batchHasRun || anyBusy;
+      elements.resetBatch.disabled = anyBusy;
+      elements.cancelBatch.hidden = !(state.fileBusy && state.fileBusyPhase === 'process');
+      elements.cancelBatch.disabled = state.batchCancelRequested;
+      elements.filePrivacyNote.hidden = !state.files.some((item) => item.mapping);
+
+      let textDisabledReason = '';
+      if (anyBusy) textDisabledReason = '處理中，請稍候';
+      else if (!state.entitiesReady) textDisabledReason = '正在載入偵測類型';
+      else if (!hasText) textDisabledReason = '請先輸入文字';
+      else if (overLimit) textDisabledReason = '超過 50,000 字';
+      else if (!hasEntities) textDisabledReason = '請至少選擇一種偵測類型';
+      elements.startScrub.title = elements.startScrub.disabled ? textDisabledReason : '開始脫敏（⌘/Ctrl+Enter）';
+
+      let fileDisabledReason = '';
+      if (anyBusy) fileDisabledReason = '處理中，請稍候';
+      else if (validBatchItems.length === 0) fileDisabledReason = '請先加入可處理檔案';
+      else if (previewsPending) fileDisabledReason = '請等待檔案預覽完成';
+      else if (!state.entitiesReady) fileDisabledReason = '正在載入偵測類型';
+      else if (!hasEntities) fileDisabledReason = '請至少選擇一種偵測類型';
+      elements.startBatchScrub.title = elements.startBatchScrub.disabled ? fileDisabledReason : `依序處理 ${validBatchItems.length} 個檔案`;
+      elements.copyResult.title = elements.copyResult.disabled ? '請先完成脫敏' : '複製脫敏結果';
+      elements.downloadTextReport.title = elements.downloadTextReport.disabled ? '請先完成脫敏' : '下載不含原始個資的報告';
+      elements.downloadTextMapping.title = elements.downloadTextMapping.disabled ? '請先以佔位符模式完成脫敏' : '映射表含原始個資';
+      elements.downloadAllZip.title = elements.downloadAllZip.disabled ? '請先完成批次處理' : `下載 ${successfulItems.length} 個成功檔案與批次報告`;
+      updateFileSteps();
+    }
+
+    function setTextBusy(isBusy) {
+      state.textBusy = isBusy;
+      elements.textButtonIcon.hidden = isBusy;
+      elements.textButtonSpinner.hidden = !isBusy;
+      elements.textButtonLabel.textContent = isBusy ? '脫敏中…' : '開始脫敏';
+      refreshControls();
+    }
+
+    function setFileBusy(isBusy, phase = null) {
+      state.fileBusy = isBusy;
+      state.fileBusyPhase = isBusy ? phase : null;
+      const processing = isBusy && phase === 'process';
+      const bundling = isBusy && phase === 'bundle';
+      elements.fileButtonIcon.hidden = processing;
+      elements.fileButtonSpinner.hidden = !processing;
+      elements.fileButtonLabel.textContent = processing ? '批次處理中…' : '開始批次脫敏';
+      elements.zipButtonIcon.hidden = bundling;
+      elements.zipButtonSpinner.hidden = !bundling;
+      elements.zipButtonLabel.textContent = bundling ? '正在打包…' : '下載全部（ZIP）';
+      refreshControls();
+    }
+
+    function activateTab(tabName) {
+      if (state.textBusy || state.fileBusy) return;
+      state.activeTab = tabName;
+      const textActive = tabName === 'text';
+      elements.tabText.setAttribute('aria-selected', String(textActive));
+      elements.tabFile.setAttribute('aria-selected', String(!textActive));
+      elements.panelText.hidden = !textActive;
+      elements.panelFile.hidden = textActive;
+      (textActive ? elements.tabText : elements.tabFile).focus();
+    }
+
+    async function loadEntities() {
+      try {
+        const response = await fetch('/api/entities', { headers: { Accept: 'application/json' } });
+        const data = await readJsonResponse(response);
+        if (!Array.isArray(data) || data.length === 0) throw new Error('本地服務未提供可用的偵測類型。');
+
+        elements.entityList.replaceChildren();
+        state.entityLabels.clear();
+        data.forEach((entity, index) => {
+          if (!entity || typeof entity.id !== 'string' || typeof entity.label !== 'string') return;
+          state.entityLabels.set(entity.id, entity.label);
+          const label = createElement('label', 'choice-chip');
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.value = entity.id;
+          checkbox.id = `entity-choice-${index}`;
+          checkbox.checked = true;
+          checkbox.addEventListener('change', refreshControls);
+          const dot = createElement('span', 'entity-dot');
+          dot.setAttribute('aria-hidden', 'true');
+          applyEntityDotStyle(dot, entity.id);
+          label.append(checkbox, dot, document.createTextNode(entity.label));
+          elements.entityList.append(label);
+        });
+
+        if (state.entityLabels.size === 0) throw new Error('本地服務未提供可用的偵測類型。');
+        state.entitiesReady = true;
+        elements.entityList.setAttribute('aria-busy', 'false');
+        elements.entityStatus.classList.remove('is-error');
+        // 狀態文字由 refreshControls 統一維護(finally 會呼叫)
+      } catch (error) {
+        state.entitiesReady = false;
+        elements.entityList.setAttribute('aria-busy', 'false');
+        elements.entityStatus.textContent = `偵測類型載入失敗：${readableError(error)}`;
+        elements.entityStatus.classList.add('is-error');
+      } finally {
+        refreshControls();
+      }
+    }
+
+    function clearTextResult() {
+      state.textSource = '';
+      state.textResult = null;
+      state.textFindings = [];
+      state.textReport = null;
+      state.textMapping = null;
+      state.textResultMode = null;
+      elements.resultView.replaceChildren(resultEmptyState.cloneNode(true));
+      elements.resultView.classList.add('empty-state');
+      elements.resultView.classList.remove('result-reveal');
+      elements.resultModeNote.textContent = '尚未處理';
+      elements.textLegend.replaceChildren();
+      elements.findingCount.textContent = '0 筆偵測';
+      elements.textDetails.hidden = true;
+      elements.findingsBody.replaceChildren();
+      resetCopyFeedback();
+      setStatus(elements.textStatus, '');
+      refreshControls();
+    }
+
+    function reportFinding(finding) {
+      return {
+        entity_type: finding.entity_type,
+        original_masked: finding.original_masked,
+        start: finding.start,
+        end: finding.end,
+        score: finding.score,
+        recognizer: finding.recognizer,
+        replacement: finding.replacement,
+        scrubbed_start: finding.scrubbed_start,
+        scrubbed_end: finding.scrubbed_end
+      };
+    }
+
+    async function scrubText() {
+      const text = elements.sourceInput.value;
+      const mode = currentMode();
+      const entities = selectedEntities();
+      const length = codePointLength(text);
+      if (!text.trim() || length > MAX_TEXT_LENGTH || entities.length === 0) {
+        refreshControls();
+        return;
+      }
+
+      clearError(elements.textError);
+      state.textMapping = null;
+      state.lastRunEntitiesKey = entities.slice().sort().join(',');
+      resetCopyFeedback();
+      setTextBusy(true);
+      setStatus(elements.textStatus, '正在本機偵測並脫敏…', { busy: true });
+
+      try {
+        const response = await fetch('/api/scrub', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ text, mode, entities })
+        });
+        const data = await readJsonResponse(response);
+        const findings = Array.isArray(data.findings) ? data.findings : [];
+        const scrubbedText = typeof data.scrubbed_text === 'string' ? data.scrubbed_text : '';
+        const stats = data.stats && typeof data.stats === 'object' && !Array.isArray(data.stats) ? data.stats : {};
+
+        state.textSource = text;
+        state.textResult = scrubbedText;
+        state.textFindings = findings;
+        state.textMapping = mode === 'placeholder' && data.mapping && typeof data.mapping === 'object' ? data.mapping : null;
+        state.textResultMode = mode;
+        state.textReport = {
+          timestamp: new Date().toISOString(),
+          tool: 'TW-PII-Scrubber',
+          mode,
+          stats,
+          findings: findings.map(reportFinding)
+        };
+
+        renderHighlightedText(elements.sourceView, text, findings, 'start', 'end');
+        renderHighlightedText(elements.resultView, scrubbedText, findings, 'scrubbed_start', 'scrubbed_end');
+        renderLegend(findings);
+        renderFindings(findings);
+        elements.sourceInput.hidden = true;
+        elements.sourceView.hidden = false;
+        elements.editSource.hidden = false;
+        elements.sourceModeNote.textContent = '唯讀對照';
+        elements.resultView.classList.remove('empty-state');
+        revealOnce(elements.resultView);
+        elements.resultModeNote.textContent = mode === 'placeholder' ? '佔位符模式' : '遮罩模式';
+        elements.findingCount.textContent = `${findings.length.toLocaleString('zh-TW')} 筆偵測`;
+        setStatus(elements.textStatus, `處理完成，共偵測 ${findings.length.toLocaleString('zh-TW')} 筆。`, { success: true });
+      } catch (error) {
+        showError(elements.textError, readableError(error));
+        setStatus(elements.textStatus, '處理未完成');
+      } finally {
+        setTextBusy(false);
+      }
+    }
+
+    function editSource() {
+      elements.sourceView.hidden = true;
+      elements.sourceInput.hidden = false;
+      elements.editSource.hidden = true;
+      elements.sourceModeNote.textContent = '編輯中';
+      elements.sourceInput.focus();
+    }
+
+    async function copyTextResult() {
+      if (state.textResult === null) return;
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(state.textResult);
+        } else {
+          const temporary = document.createElement('textarea');
+          temporary.value = state.textResult;
+          temporary.setAttribute('readonly', '');
+          temporary.style.position = 'fixed';
+          temporary.style.opacity = '0';
+          document.body.append(temporary);
+          temporary.select();
+          const copied = document.execCommand('copy');
+          temporary.remove();
+          if (!copied) throw new Error('瀏覽器不允許複製。');
+        }
+        resetCopyFeedback();
+        elements.copyButtonIcon.hidden = true;
+        elements.copySuccessIcon.hidden = false;
+        elements.copyButtonLabel.textContent = '已複製';
+        copyFeedbackTimer = window.setTimeout(resetCopyFeedback, 2000);
+        setStatus(elements.textStatus, '已複製脫敏結果。', { success: true });
+      } catch (error) {
+        showError(elements.textError, `複製失敗：${readableError(error)}`);
+      }
+    }
+
+    function safeDownloadName(filename, fallback) {
+      if (typeof filename !== 'string' || !filename.trim()) return fallback;
+      const basename = filename.split(/[\\/]/).pop().replace(/[\u0000-\u001f\u007f]/g, '').trim();
+      return basename || fallback;
+    }
+
+    function downloadBlob(blob, filename) {
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = filename;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    }
+
+    function timestampForFilename() {
+      return new Date().toISOString().replace(/[:.]/g, '-');
+    }
+
+    function downloadJson(payload, filename) {
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+      downloadBlob(blob, filename);
+    }
+
+    function confirmAndDownloadMapping(mapping, prefix) {
+      if (!mapping) return;
+      if (!window.confirm('映射表含原始個資。確定要下載嗎？請下載後妥善保管。')) return;
+      downloadJson(mapping, `${prefix}-mapping-${timestampForFilename()}.json`);
+    }
+
+    function formatFileSize(size) {
+      if (!Number.isFinite(size)) return '';
+      if (size < 1024) return `${size} B`;
+      if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+      return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    function createSvg(paths, viewBox = '0 0 24 24') {
+      const svg = document.querySelector('.tab-button svg').cloneNode(false);
+      svg.setAttribute('viewBox', viewBox);
+      svg.setAttribute('aria-hidden', 'true');
+      paths.forEach((pathData) => {
+        const path = svg.ownerDocument.createElementNS(svg.namespaceURI, 'path');
+        path.setAttribute('d', pathData);
+        svg.append(path);
+      });
+      return svg;
+    }
+
+    function fileExtension(filename) {
+      return String(filename).includes('.') ? String(filename).split('.').pop().toLowerCase() : 'txt';
+    }
+
+    function createFileTypeIcon(item) {
+      const type = item.preview && typeof item.preview.filetype === 'string'
+        ? item.preview.filetype
+        : fileExtension(item.file.name);
+      const icon = createElement('div', `file-type-icon is-${type}`);
+      const svg = createSvg(['M6.5 3.5h7l4 4v13h-11z', 'M13.5 3.5v4h4', 'M9 12h6M9 15.5h6']);
+      icon.append(svg, createElement('span', 'file-type-icon-label', type.toUpperCase()));
+      return icon;
+    }
+
+    function sumStats(stats) {
+      if (!stats || typeof stats !== 'object' || Array.isArray(stats)) return 0;
+      return Object.values(stats).reduce((total, value) => {
+        const numeric = Number(value);
+        return total + (Number.isFinite(numeric) ? numeric : 0);
+      }, 0);
+    }
+
+    function previewDescription(item) {
+      if (item.status === 'previewing') return '正在讀取預覽…';
+      if (item.previewError) return '已排除於批次外';
+      if (!item.preview) return '尚無預覽';
+      const rowCount = Number(item.preview.row_count);
+      const formattedRows = Number.isFinite(rowCount) ? rowCount.toLocaleString('zh-TW') : '—';
+      if (item.preview.filetype === 'txt') return `純文字 · ${formattedRows} 行`;
+      const columnCount = Array.isArray(item.preview.columns) ? item.preview.columns.length : 0;
+      return `${columnCount.toLocaleString('zh-TW')} 欄 / ${formattedRows} 列`;
+    }
+
+    function statusChipForItem(item) {
+      const detected = item.report ? sumStats(item.report.stats) : 0;
+      const states = {
+        previewing: ['讀取預覽', 'is-processing'],
+        ready: ['可處理', ''],
+        queued: ['佇列中', ''],
+        processing: ['處理中', 'is-processing'],
+        success: [`完成 · 偵測 ${detected.toLocaleString('zh-TW')} 筆`, 'is-success'],
+        failed: ['失敗', 'is-error'],
+        invalid: ['預覽失敗', 'is-error'],
+        cancelled: ['已取消', '']
+      };
+      const [label, variant] = states[item.status] || ['等待中', ''];
+      const chip = createElement('span', `status-chip ${variant}`.trim());
+      if (item.status === 'previewing' || item.status === 'processing') {
+        const spinner = createElement('span', 'spinner status-spinner');
+        spinner.setAttribute('aria-hidden', 'true');
+        chip.append(spinner);
+      } else if (item.status === 'success') {
+        chip.append(createSvg(['m4 12.5 5 5L20 6.5']));
+      }
+      chip.append(document.createTextNode(label));
+      return chip;
+    }
+
+    function renderBatchFileList() {
+      elements.batchFileList.replaceChildren();
+      const totalSize = state.files.reduce((total, item) => total + item.file.size, 0);
+      const validCount = state.files.filter((item) => item.preview && !item.previewError).length;
+      const invalidCount = state.files.filter((item) => item.previewError).length;
+      elements.batchFileCount.textContent = `${state.files.length} / ${MAX_BATCH_FILES} 檔 · ${formatFileSize(totalSize)}`;
+      elements.batchFileSummary.textContent = state.files.length === 0
+        ? '尚未加入檔案'
+        : `${validCount} 個可處理${invalidCount ? ` · ${invalidCount} 個已排除` : ''}`;
+
+      state.files.forEach((item) => {
+        const row = createElement('article', `batch-file-row${item.previewError || item.status === 'failed' ? ' is-error' : ''}`);
+        const info = createElement('div');
+        const name = createElement('div', 'batch-file-name', item.file.name);
+        name.title = item.file.name;
+        info.append(name, createElement('div', 'batch-file-size', formatFileSize(item.file.size)));
+
+        const preview = createElement('div');
+        preview.append(createElement('div', 'batch-file-preview', previewDescription(item)));
+        if (item.previewError) preview.append(createElement('div', 'batch-file-error', item.previewError));
+
+        const status = createElement('div');
+        status.append(statusChipForItem(item));
+        if (item.status === 'failed' && item.processError) {
+          status.append(createElement('div', 'batch-file-error', item.processError));
+        }
+
+        const remove = createElement('button', 'icon-button batch-remove');
+        remove.type = 'button';
+        remove.disabled = state.fileBusy;
+        remove.title = `移除 ${item.file.name}`;
+        remove.setAttribute('aria-label', `移除 ${item.file.name}`);
+        remove.append(createSvg(['M6 6l12 12M18 6 6 18']));
+        remove.addEventListener('click', () => removeBatchFile(item.id));
+        row.append(createFileTypeIcon(item), info, preview, status, remove);
+        elements.batchFileList.append(row);
+      });
+    }
+
+    function strategyLabel(strategy) {
+      return { mask_all: '整欄遮罩', ner: 'NER 偵測', skip: '略過' }[strategy] || 'NER 偵測';
+    }
+
+    function createStrategySelect(selectedValue = 'ner', inheritedValue = null) {
+      const select = createElement('select', 'strategy-select');
+      if (inheritedValue !== null) {
+        const inherited = createElement('option', '', `套用彙總（${strategyLabel(inheritedValue)}）`);
+        inherited.value = '';
+        inherited.selected = selectedValue === '';
+        select.append(inherited);
+      }
+      const choices = [
+        ['mask_all', '整欄遮罩'],
+        ['ner', 'NER 偵測'],
+        ['skip', '略過']
+      ];
+      for (const [value, label] of choices) {
+        const option = createElement('option', '', label);
+        option.value = value;
+        if (value === selectedValue) option.selected = true;
+        select.append(option);
+      }
+      return select;
+    }
+
+    function resetBatchRunState() {
+      state.batchHasRun = false;
+      state.batchCancelRequested = false;
+      state.batchMode = null;
+      state.batchEntities = [];
+      state.files.forEach((item) => {
+        item.result = null;
+        item.report = null;
+        item.mapping = null;
+        item.processError = null;
+        if (item.previewError) item.status = 'invalid';
+        else if (item.preview) item.status = 'ready';
+      });
+      elements.fileResultContent.hidden = true;
+      elements.fileResultContent.classList.remove('result-reveal');
+      elements.fileResultNote.textContent = '';
+      elements.batchSummary.replaceChildren();
+      elements.batchEntityTotals.replaceChildren();
+      elements.batchResultList.replaceChildren();
+      elements.batchProgress.hidden = true;
+      clearError(elements.bundleError);
+    }
+
+    function renderStrategyControls() {
+      const readyItems = state.files.filter((item) => item.preview && !item.previewError);
+      const tableItems = readyItems.filter((item) => Array.isArray(item.preview.columns));
+      elements.globalStrategyTable.replaceChildren();
+      elements.fileOverrides.replaceChildren();
+      elements.txtOnlyNote.hidden = tableItems.length !== 0 || readyItems.length === 0;
+
+      if (tableItems.length > 0) {
+        const columnFiles = new Map();
+        tableItems.forEach((item) => {
+          const namesInFile = new Set(item.preview.columns.map((column) => String(column && column.name !== undefined ? column.name : '')));
+          namesInFile.forEach((name) => columnFiles.set(name, (columnFiles.get(name) || 0) + 1));
+        });
+        const table = createElement('div', 'strategy-table');
+        const heading = createElement('div', 'strategy-row is-head');
+        heading.append(createElement('span', '', '欄位名稱'), createElement('span', '', '出現檔案'), createElement('span', '', '彙總策略'));
+        table.append(heading);
+        columnFiles.forEach((count, name) => {
+          if (!Object.prototype.hasOwnProperty.call(state.globalStrategies, name)) state.globalStrategies[name] = 'ner';
+          const row = createElement('div', 'strategy-row');
+          const nameNode = createElement('span', 'column-name', name || '未命名欄位');
+          nameNode.title = name || '未命名欄位';
+          const select = createStrategySelect(state.globalStrategies[name]);
+          select.setAttribute('aria-label', `${name || '未命名欄位'}彙總策略`);
+          select.addEventListener('change', () => {
+            state.globalStrategies[name] = select.value;
+            resetBatchRunState();
+            renderStrategyControls();
+            renderBatchFileList();
+            refreshControls();
+          });
+          row.append(nameNode, createElement('span', 'section-note', `${count} 個檔案`), select);
+          table.append(row);
+        });
+        elements.globalStrategyTable.append(table);
+      }
+
+      readyItems.forEach((item) => {
+        if (item.preview.filetype === 'txt') {
+          elements.fileOverrides.append(createElement('div', 'txt-file-note', `${item.file.name} · 全文 NER，無需設定`));
+          return;
+        }
+        const details = createElement('details', 'override-card');
+        const uniqueColumns = Array.from(new Set(item.preview.columns.map((column) => String(column && column.name !== undefined ? column.name : ''))));
+        details.append(createElement('summary', '', `${item.file.name} · 個別覆寫（預設收合）`));
+        const body = createElement('div', 'override-card-body');
+        uniqueColumns.forEach((name) => {
+          const row = createElement('div', 'override-row');
+          const inherited = state.globalStrategies[name] || 'ner';
+          const selected = Object.prototype.hasOwnProperty.call(item.overrides, name) ? item.overrides[name] : '';
+          const select = createStrategySelect(selected, inherited);
+          select.setAttribute('aria-label', `${item.file.name} 的 ${name || '未命名欄位'}策略覆寫`);
+          select.addEventListener('change', () => {
+            if (select.value) item.overrides[name] = select.value;
+            else delete item.overrides[name];
+            resetBatchRunState();
+            renderBatchFileList();
+            refreshControls();
+          });
+          row.append(createElement('span', 'column-name', name || '未命名欄位'), select);
+          body.append(row);
+        });
+        details.append(body);
+        elements.fileOverrides.append(details);
+      });
+      updateFileSteps();
+    }
+
+    async function previewBatchItem(item) {
+      try {
+        const formData = new FormData();
+        formData.append('file', item.file);
+        const response = await fetch('/api/scrub-file/preview', {
+          method: 'POST',
+          headers: { Accept: 'application/json' },
+          body: formData
+        });
+        const preview = await readJsonResponse(response);
+        if (!preview || typeof preview.filetype !== 'string') throw new Error('本地服務未回傳可用的檔案預覽。');
+        item.preview = preview;
+        item.previewError = null;
+        item.status = 'ready';
+      } catch (error) {
+        item.preview = null;
+        item.previewError = readableError(error);
+        item.status = 'invalid';
+      } finally {
+        if (!state.files.includes(item)) return;
+        renderBatchFileList();
+        renderStrategyControls();
+        const pending = state.files.some((candidate) => candidate.status === 'previewing');
+        if (!pending) {
+          const validCount = state.files.filter((candidate) => candidate.preview && !candidate.previewError).length;
+          setStatus(elements.fileStatus, validCount > 0 ? `預覽完成，${validCount} 個檔案可處理。` : '沒有可處理的檔案', { success: validCount > 0 });
+        }
+        refreshControls();
+      }
+    }
+
+    function addBatchFiles(fileList) {
+      if (state.fileBusy) return;
+      clearError(elements.fileError);
+      const incoming = Array.from(fileList || []);
+      if (incoming.length === 0) return;
+      if (state.batchHasRun) resetBatchRunState();
+      const remaining = Math.max(0, MAX_BATCH_FILES - state.files.length);
+      const accepted = incoming.slice(0, remaining);
+      const rejectedCount = incoming.length - accepted.length;
+      accepted.forEach((file) => {
+        const item = {
+          id: state.nextFileId,
+          file,
+          preview: null,
+          previewError: null,
+          overrides: Object.create(null),
+          status: 'previewing',
+          result: null,
+          report: null,
+          mapping: null,
+          processError: null
+        };
+        state.nextFileId += 1;
+        state.files.push(item);
+        previewBatchItem(item);
+      });
+      elements.fileInput.value = '';
+      renderBatchFileList();
+      renderStrategyControls();
+      if (rejectedCount > 0) {
+        showError(elements.fileError, `最多只能加入 20 個檔案，本次有 ${rejectedCount} 個檔案未加入。`);
+      }
+      if (accepted.length > 0) setStatus(elements.fileStatus, `正在讀取 ${accepted.length} 個檔案的預覽…`, { busy: true });
+      refreshControls();
+    }
+
+    function removeBatchFile(itemId) {
+      if (state.fileBusy) return;
+      if (state.batchHasRun) resetBatchRunState();
+      state.files = state.files.filter((item) => item.id !== itemId);
+      renderBatchFileList();
+      renderStrategyControls();
+      setStatus(elements.fileStatus, state.files.length ? '已移除檔案。' : '');
+      refreshControls();
+    }
+
+    function setDropzoneActive(isActive) {
+      elements.fileDropzone.classList.toggle('is-dragging', isActive);
+    }
+
+    function handleFileDragEnter(event) {
+      event.preventDefault();
+      if (state.textBusy || state.fileBusy || state.files.length >= MAX_BATCH_FILES) return;
+      dropzoneDragDepth += 1;
+      setDropzoneActive(true);
+    }
+
+    function handleFileDragLeave(event) {
+      event.preventDefault();
+      dropzoneDragDepth = Math.max(0, dropzoneDragDepth - 1);
+      if (dropzoneDragDepth === 0) setDropzoneActive(false);
+    }
+
+    function handleFileDrop(event) {
+      event.preventDefault();
+      dropzoneDragDepth = 0;
+      setDropzoneActive(false);
+      if (state.textBusy || state.fileBusy) return;
+      const files = event.dataTransfer && event.dataTransfer.files;
+      if (!files || files.length === 0) return;
+      addBatchFiles(files);
+    }
+
+    function collectColumnStrategies(item) {
+      const strategies = Object.create(null);
+      if (!item.preview || !Array.isArray(item.preview.columns)) return strategies;
+      item.preview.columns.forEach((column) => {
+        const name = String(column && column.name !== undefined ? column.name : '');
+        strategies[name] = Object.prototype.hasOwnProperty.call(item.overrides, name)
+          ? item.overrides[name]
+          : (state.globalStrategies[name] || 'ner');
+      });
+      return strategies;
+    }
+
+    function updateBatchProgress(completed, total, detected) {
+      const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+      elements.batchProgress.hidden = false;
+      elements.batchProgressTrack.setAttribute('aria-valuemax', String(total));
+      elements.batchProgressTrack.setAttribute('aria-valuenow', String(completed));
+      elements.batchProgressBar.style.width = `${percentage}%`;
+      elements.batchProgressText.textContent = `${completed}/${total} · 已偵測 ${detected.toLocaleString('zh-TW')} 筆`;
+    }
+
+    async function scrubBatch() {
+      const items = state.files.filter((item) => item.preview && !item.previewError);
+      const mode = currentMode();
+      const entities = selectedEntities();
+      if (items.length === 0 || entities.length === 0 || state.files.some((item) => item.status === 'previewing')) return;
+
+      clearError(elements.fileError);
+      resetBatchRunState();
+      state.batchMode = mode;
+      state.batchEntities = entities.slice();
+      state.lastRunEntitiesKey = entities.slice().sort().join(',');
+      items.forEach((item) => { item.status = 'queued'; });
+      state.batchCancelRequested = false;
+      setFileBusy(true, 'process');
+      renderBatchFileList();
+      updateBatchProgress(0, items.length, 0);
+      setStatus(elements.fileStatus, `正在依序處理 ${items.length} 個檔案…`, { busy: true });
+
+      let completed = 0;
+      let detected = 0;
+      for (const item of items) {
+        if (state.batchCancelRequested) break;
+        item.status = 'processing';
+        renderBatchFileList();
+
+        const formData = new FormData();
+        formData.append('file', item.file);
+        formData.append('mode', mode);
+        formData.append('entities', JSON.stringify(entities));
+        formData.append('column_strategies', JSON.stringify(collectColumnStrategies(item)));
+        try {
+          const response = await fetch('/api/scrub-file', {
+            method: 'POST',
+            headers: { Accept: 'application/json' },
+            body: formData
+          });
+          const data = await readJsonResponse(response);
+          if (typeof data.file_b64 !== 'string') throw new Error('本地服務未回傳可下載的檔案。');
+          item.result = data;
+          item.report = data.report && typeof data.report === 'object' ? data.report : {};
+          item.mapping = mode === 'placeholder' && data.mapping && typeof data.mapping === 'object' ? data.mapping : null;
+          item.status = 'success';
+          detected += sumStats(item.report.stats);
+        } catch (error) {
+          item.status = 'failed';
+          item.processError = readableError(error);
+        }
+        completed += 1;
+        updateBatchProgress(completed, items.length, detected);
+        renderBatchFileList();
+      }
+
+      if (state.batchCancelRequested) {
+        items.filter((item) => item.status === 'queued').forEach((item) => { item.status = 'cancelled'; });
+      }
+      state.batchHasRun = true;
+      renderBatchFileList();
+      renderBatchResults();
+      const successCount = items.filter((item) => item.status === 'success').length;
+      const failureCount = items.filter((item) => item.status === 'failed').length;
+      const cancelledCount = items.filter((item) => item.status === 'cancelled').length;
+      const completionMessage = state.batchCancelRequested
+        ? `批次已停止：成功 ${successCount}、失敗 ${failureCount}、取消 ${cancelledCount}。`
+        : `批次完成：成功 ${successCount}、失敗 ${failureCount}。`;
+      setStatus(elements.fileStatus, completionMessage, { success: successCount > 0 });
+      setFileBusy(false);
+      renderBatchFileList();
+      renderBatchResults();
+    }
+
+    function cancelBatch() {
+      if (!state.fileBusy || state.fileBusyPhase !== 'process') return;
+      state.batchCancelRequested = true;
+      elements.cancelBatch.disabled = true;
+      setStatus(elements.fileStatus, '收到取消要求；目前檔案完成後將停止送出後續檔案。', { busy: true });
+    }
+
+    function aggregateSuccessfulStats() {
+      const totals = Object.create(null);
+      state.files.filter((item) => item.status === 'success').forEach((item) => {
+        const stats = item.report && item.report.stats;
+        if (!stats || typeof stats !== 'object' || Array.isArray(stats)) return;
+        Object.entries(stats).forEach(([entityType, count]) => {
+          const numeric = Number(count);
+          if (Number.isFinite(numeric)) totals[entityType] = (totals[entityType] || 0) + numeric;
+        });
+      });
+      return totals;
+    }
+
+    function renderBatchResults() {
+      const successItems = state.files.filter((item) => item.status === 'success');
+      const failedItems = state.files.filter((item) => item.status === 'failed');
+      const invalidItems = state.files.filter((item) => item.status === 'invalid');
+      const cancelledItems = state.files.filter((item) => item.status === 'cancelled');
+      elements.fileResultContent.hidden = !state.batchHasRun;
+      if (!state.batchHasRun) return;
+      elements.fileResultNote.textContent = `${state.batchMode === 'placeholder' ? '佔位符' : '遮罩'}模式 · ${successItems.length} 個成功`;
+      elements.batchSummary.replaceChildren();
+      elements.batchSummary.append(
+        createElement('span', '', `成功 `),
+        createElement('strong', '', String(successItems.length)),
+        createElement('span', '', `失敗 `),
+        createElement('strong', '', String(failedItems.length)),
+        createElement('span', '', `排除 `),
+        createElement('strong', '', String(invalidItems.length)),
+        createElement('span', '', `取消 `),
+        createElement('strong', '', String(cancelledItems.length))
+      );
+
+      const totals = aggregateSuccessfulStats();
+      elements.batchEntityTotals.replaceChildren();
+      Object.entries(totals).forEach(([entityType, count]) => {
+        const item = createElement('span', 'entity-total');
+        const dot = createElement('span', 'entity-total-dot');
+        applyEntityDotStyle(dot, entityType);
+        item.append(dot, document.createTextNode(`${entityLabel(entityType)} ${Number(count).toLocaleString('zh-TW')}`));
+        elements.batchEntityTotals.append(item);
+      });
+
+      elements.batchResultList.replaceChildren();
+      state.files.forEach((item) => {
+        const row = createElement('div', `batch-result-row${item.status === 'failed' || item.status === 'invalid' ? ' is-error' : ''}`);
+        const info = createElement('div');
+        info.append(createElement('div', 'batch-file-name', item.file.name));
+        const error = item.processError || item.previewError;
+        if (error) info.append(createElement('div', 'batch-file-error', error));
+        const actions = createElement('div', 'batch-file-actions');
+        if (item.status === 'success') {
+          const download = createElement('button', 'ghost-button small-button');
+          download.type = 'button';
+          download.append(createSvg(['M12 3v11M7.5 10.5 12 15l4.5-4.5M4 18v2h16v-2']), document.createTextNode('下載'));
+          download.addEventListener('click', () => downloadProcessedItem(item));
+          actions.append(download);
+          if (item.mapping) {
+            const mapping = createElement('button', 'danger-button mapping-action small-button');
+            mapping.type = 'button';
+            mapping.append(createSvg(['M11.5 12H21M17 12v3M20 12v2', 'M11.5 12a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0']), document.createTextNode('映射表'));
+            mapping.addEventListener('click', () => confirmAndDownloadMapping(item.mapping, `tw-pii-${safeDownloadName(item.file.name, 'file')}`));
+            actions.append(mapping);
+          }
+        }
+        row.append(info, statusChipForItem(item), actions);
+        elements.batchResultList.append(row);
+      });
+      elements.filePrivacyNote.hidden = !state.files.some((item) => item.mapping);
+      revealOnce(elements.fileResultContent);
+      refreshControls();
+    }
+
+    function sanitizedReportFinding(finding) {
+      return {
+        entity_type: finding.entity_type,
+        original_masked: finding.original_masked,
+        score: finding.score,
+        recognizer: finding.recognizer,
+        replacement: finding.replacement,
+        location: finding.location
+      };
+    }
+
+    function buildBatchReport() {
+      return {
+        timestamp: new Date().toISOString(),
+        tool: 'TW-PII-Scrubber',
+        mode: state.batchMode,
+        total_stats: aggregateSuccessfulStats(),
+        files: state.files.map((item, index) => {
+          // 報告是會離開本機的產物:檔名一律用伺服器脫敏後的
+          // source_filename;未處理的檔案(沒經過脫敏)以流水號代替,
+          // 原始檔名只顯示在畫面上、不進報告
+          if (item.status === 'success') {
+            const findings = item.report && Array.isArray(item.report.findings) ? item.report.findings : [];
+            return {
+              filename: (item.report && item.report.source_filename) || `檔案 ${index + 1}`,
+              status: 'success',
+              stats: item.report && item.report.stats && typeof item.report.stats === 'object' ? item.report.stats : {},
+              findings: findings.map(sanitizedReportFinding)
+            };
+          }
+          const error = item.processError || item.previewError;
+          return {
+            filename: `未處理檔案 ${index + 1}`,
+            status: item.status === 'invalid' ? 'failed' : item.status,
+            ...(error ? { error } : {})
+          };
+        })
+      };
+    }
+
+    function utf8ToBase64(text) {
+      const bytes = new TextEncoder().encode(text);
+      const chunks = [];
+      for (let offset = 0; offset < bytes.length; offset += 32768) {
+        chunks.push(String.fromCharCode(...bytes.subarray(offset, offset + 32768)));
+      }
+      return window.btoa(chunks.join(''));
+    }
+
+    async function downloadAllZip() {
+      const successItems = state.files.filter((item) => item.status === 'success' && item.result);
+      if (!state.batchHasRun) return;
+      clearError(elements.bundleError);
+      const report = buildBatchReport();
+      const entries = successItems.map((item) => ({
+        filename: String(item.result.filename || item.file.name),
+        content_b64: item.result.file_b64
+      }));
+      entries.push({
+        filename: '批次報告.json',
+        content_b64: utf8ToBase64(JSON.stringify(report, null, 2))
+      });
+      setFileBusy(true, 'bundle');
+      try {
+        const response = await fetch('/api/bundle-zip', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ entries })
+        });
+        const data = await readJsonResponse(response);
+        if (typeof data.zip_b64 !== 'string') throw new Error('本地服務未回傳可下載的 ZIP。');
+        const filename = safeDownloadName(data.filename, `tw-pii-scrubbed-${timestampForFilename()}.zip`);
+        downloadBlob(base64ToBlob(data.zip_b64, 'application/zip'), filename);
+      } catch (error) {
+        showError(elements.bundleError, readableError(error));
+      } finally {
+        setFileBusy(false);
+        renderBatchResults();
+      }
+    }
+
+    function resetBatch() {
+      if (state.fileBusy) return;
+      state.files = [];
+      state.globalStrategies = Object.create(null);
+      resetBatchRunState();
+      elements.fileInput.value = '';
+      elements.batchProgressBar.style.width = '0%';
+      clearError(elements.fileError);
+      setStatus(elements.fileStatus, '');
+      renderBatchFileList();
+      renderStrategyControls();
+      refreshControls();
+    }
+
+    function mimeTypeForFilename(filename) {
+      const extension = String(filename).split('.').pop().toLowerCase();
+      if (extension === 'txt') return 'text/plain;charset=utf-8';
+      if (extension === 'csv') return 'text/csv;charset=utf-8';
+      if (extension === 'xlsx') return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      return 'application/octet-stream';
+    }
+
+    function base64ToBlob(base64, mimeType) {
+      const binary = window.atob(base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let index = 0; index < binary.length; index += 1) {
+        bytes[index] = binary.charCodeAt(index);
+      }
+      return new Blob([bytes], { type: mimeType });
+    }
+
+    function downloadProcessedItem(item) {
+      if (!item || !item.result) return;
+      try {
+        const filename = safeDownloadName(item.result.filename, `scrubbed-${item.file.name}`);
+        const blob = base64ToBlob(item.result.file_b64, mimeTypeForFilename(filename));
+        downloadBlob(blob, filename);
+      } catch (_error) {
+        showError(elements.bundleError, '下載檔案無法解碼，請重新處理後再試。');
+      }
+    }
+
+    elements.tabText.addEventListener('click', () => activateTab('text'));
+    elements.tabFile.addEventListener('click', () => activateTab('file'));
+    elements.sourceInput.addEventListener('input', () => {
+      if (state.textResult !== null) clearTextResult();
+      clearError(elements.textError);
+      refreshControls();
+    });
+    elements.editSource.addEventListener('click', editSource);
+    elements.startScrub.addEventListener('click', scrubText);
+    elements.copyResult.addEventListener('click', copyTextResult);
+    elements.downloadTextReport.addEventListener('click', () => {
+      if (state.textReport) downloadJson(state.textReport, `tw-pii-report-${timestampForFilename()}.json`);
+    });
+    elements.downloadTextMapping.addEventListener('click', () => confirmAndDownloadMapping(state.textMapping, 'tw-pii'));
+    elements.fileInput.addEventListener('change', () => addBatchFiles(elements.fileInput.files));
+    elements.fileDropzone.addEventListener('dragenter', handleFileDragEnter);
+    elements.fileDropzone.addEventListener('dragover', (event) => event.preventDefault());
+    elements.fileDropzone.addEventListener('dragleave', handleFileDragLeave);
+    elements.fileDropzone.addEventListener('drop', handleFileDrop);
+    elements.startBatchScrub.addEventListener('click', scrubBatch);
+    elements.cancelBatch.addEventListener('click', cancelBatch);
+    elements.downloadAllZip.addEventListener('click', downloadAllZip);
+    elements.resetBatch.addEventListener('click', resetBatch);
+    document.querySelectorAll('input[name="mode"]').forEach((radio) => radio.addEventListener('change', refreshControls));
+    document.addEventListener('keydown', (event) => {
+      const isScrubShortcut = (event.metaKey || event.ctrlKey) && event.key === 'Enter';
+      if (!isScrubShortcut || state.activeTab !== 'text') return;
+      event.preventDefault();
+      if (!elements.startScrub.disabled) scrubText();
+    });
+
+    refreshControls();
+    loadEntities();
+  </script>
+</body>
+</html>

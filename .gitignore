@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+dist/
+build/
+
+# 模型快取(體積大,不進版控;離線部署用 scripts/download_models.py 重建)
+models/
+
+# 系統
+.DS_Store
+
+# 暫存
+*.tmp
+tmp/
+
+# 脫敏輸出檔不進版控
+*.scrubbed*
+
+# 本地開發工作檔,不進版控
+.dispatch/
+docs/.repomap/
+
+# 本地開發檔案,不進版控
+CLAUDE.md
+docs/
+examples/
+
+# 離線部署打包目錄(README 教學會產生)
+wheels/
+
+# 本工具的輸出產物(報告/映射表/打包檔)可能含敏感內容,不進版控
+tw-pii-report-*.json
+tw-pii-file-report-*.json
+*-mapping-*.json
+tw-pii-scrubbed-*.zip
