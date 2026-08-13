@@ -38,8 +38,9 @@
 
     body {
       min-width: 1080px;
-      min-height: 100vh;
+      height: 100vh;
       margin: 0;
+      overflow: hidden;       /* 頁面本身不捲動,捲動交給內容區 */
       background:
         linear-gradient(180deg, rgba(255, 255, 255, 0.68), transparent 320px),
         var(--canvas);
@@ -85,9 +86,22 @@
       display: none !important;
     }
 
+    /* 工具型全高版面:視窗高度固定,設定區永遠可見,
+       只有內容區內部捲動——使用者不需為了改設定往回捲 */
     .app-shell {
+      display: flex;
       width: min(1460px, calc(100% - 56px));
-      margin: 28px auto 44px;
+      height: 100vh;
+      flex-direction: column;
+      gap: 14px;
+      margin: 0 auto;
+      padding: 18px 0 12px;
+    }
+
+    .topbar,
+    .control-card,
+    .footer-note {
+      flex: 0 0 auto;
     }
 
     .topbar {
@@ -188,9 +202,30 @@
     }
 
     main {
-      display: grid;
-      gap: 18px;
-      margin-top: 18px;
+      display: flex;
+      min-height: 0;          /* 允許子項在 flex 容器內正確收縮 */
+      flex: 1 1 auto;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* 分頁面板是唯一的捲動區 */
+    #panel-text,
+    #panel-file {
+      display: flex;
+      min-height: 0;
+      flex: 1 1 auto;
+      flex-direction: column;
+      gap: 14px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
+    #panel-text .workspace-card {
+      display: flex;
+      min-height: 360px;
+      flex: 1 0 auto;
+      flex-direction: column;
     }
 
     .control-card,
@@ -208,7 +243,7 @@
       /* 380px:字級放大後,佔位符範例「王小明 → <PERSON_1>」的最小容納寬 */
       grid-template-columns: 380px 1fr;
       gap: 24px;
-      padding: 20px 24px;
+      padding: 14px 24px 12px;
     }
 
     .control-group + .control-group {
@@ -356,8 +391,9 @@
 
     .workbench {
       display: grid;
+      min-height: 0;
+      flex: 1 1 auto;
       grid-template-columns: 1fr 1fr;
-      min-height: 470px;
     }
 
     .document-panel {
@@ -489,7 +525,7 @@
     .text-editor,
     .text-view {
       width: 100%;
-      min-height: 348px;
+      min-height: 180px;      /* 低視窗仍可用;高視窗由 flex 撐滿 */
       flex: 1;
       margin: 0;
       padding: 22px;
@@ -1024,10 +1060,10 @@
     .file-result-content .privacy-note { margin: 14px 0 0; }
 
     .footer-note {
-      margin: 18px 0 0;
+      margin: 0;
       color: var(--ink-soft);
-      font-size: 15px;
-      line-height: 1.7;
+      font-size: 14px;
+      line-height: 1.5;
       text-align: center;
     }
   </style>
