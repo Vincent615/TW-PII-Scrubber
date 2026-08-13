@@ -18,15 +18,15 @@
       --rule-strong: #6F8189;
       --action: #123C4E;
       --action-hi: #1B5570;
-      --local: #0B6B57;
-      --confidential: #8A4B00;
+      --local: #0B6B57;        /* 白字 6.45:1 — 承載文字,不隨資料色提亮 */
+      --confidential: #8A4B00; /* 白字 6.80:1 — 承載文字,不隨資料色提亮 */
       --alert: #A32C24;
       --focus: #123C4E;
-      --entity-identity: #1F5FA8;
-      --entity-contact: #0B6B57;
-      --entity-finance: #8A4B00;
-      --entity-place: #6B3FA0;
-      --entity-internal: #5A6570;
+      --entity-identity: #2B7CE9;
+      --entity-contact: #0D9488;
+      --entity-finance: #D97706;
+      --entity-place: #8B5CF6;
+      --entity-internal: #7A8798;
       --ink-soft: var(--ink-2);
       --canvas-deep: var(--canvas);
       --line: var(--rule);
@@ -2561,22 +2561,22 @@
     const MAX_TEXT_LENGTH = 50000;
     const MAX_BATCH_FILES = 20;
     const ENTITY_STYLES = Object.freeze({
-      PERSON: { group: '身分', line: 'solid', code: '姓名', label: '自然人姓名', background: '#EDF2F8', border: '#1F5FA8' },
-      TW_NATIONAL_ID: { group: '身分', line: 'solid', code: '身證', label: '身分證字號', background: '#EDF2F8', border: '#1F5FA8' },
-      BIRTHDAY: { group: '身分', line: 'solid', code: '生日', label: '出生日期', background: '#EDF2F8', border: '#1F5FA8' },
-      TW_MOBILE: { group: '聯絡', line: 'double', code: '手機', label: '手機號碼', background: '#EBF3F2', border: '#0B6B57' },
-      TW_PHONE: { group: '聯絡', line: 'double', code: '市話', label: '市內電話', background: '#EBF3F2', border: '#0B6B57' },
-      EMAIL_ADDRESS: { group: '聯絡', line: 'double', code: '信箱', label: '電子郵件', background: '#EBF3F2', border: '#0B6B57' },
-      CREDIT_CARD: { group: '金融', line: 'dashed', code: '卡號', label: '信用卡號', background: '#F6F1EB', border: '#8A4B00' },
-      TW_BANK_ACCOUNT: { group: '金融', line: 'dashed', code: '銀帳', label: '銀行帳號', background: '#F6F1EB', border: '#8A4B00' },
-      TW_UBN: { group: '金融', line: 'dashed', code: '統編', label: '統一編號', background: '#F6F1EB', border: '#8A4B00' },
-      TW_POLICY_NO: { group: '金融', line: 'dashed', code: '保單', label: '保單號碼', background: '#F6F1EB', border: '#8A4B00' },
-      ORG: { group: '組織地點', line: 'dotted', code: '機構', label: '機構名稱', background: '#F3F0F7', border: '#6B3FA0' },
-      LOC: { group: '組織地點', line: 'dotted', code: '地址', label: '地址地點', background: '#F3F0F7', border: '#6B3FA0' },
-      AGENT_CODE: { group: '內部', line: 'groove', code: '代號', label: '客服人員代號', background: '#F2F3F4', border: '#5A6570' },
+      PERSON: { group: '身分', line: 'solid', code: '姓名', label: '自然人姓名', background: '#E9F1FD', border: '#2B7CE9' },
+      TW_NATIONAL_ID: { group: '身分', line: 'double', code: '身證', label: '身分證字號', background: '#F1EAFE', border: '#7C3AED' },
+      BIRTHDAY: { group: '身分', line: 'double', code: '生日', label: '出生日期', background: '#FDEFE4', border: '#EA580C' },
+      TW_MOBILE: { group: '聯絡', line: 'double', code: '手機', label: '手機號碼', background: '#E2F5F2', border: '#0D9488' },
+      TW_PHONE: { group: '聯絡', line: 'dashed', code: '市話', label: '市內電話', background: '#E2F2F7', border: '#0E7490' },
+      EMAIL_ADDRESS: { group: '聯絡', line: 'solid', code: '信箱', label: '電子郵件', background: '#E6F4EA', border: '#15803D' },
+      CREDIT_CARD: { group: '金融', line: 'solid', code: '卡號', label: '信用卡號', background: '#FCE9E9', border: '#B91C1C' },
+      TW_BANK_ACCOUNT: { group: '金融', line: 'dotted', code: '銀帳', label: '銀行帳號', background: '#E8ECF7', border: '#1E3A8A' },
+      TW_UBN: { group: '金融', line: 'dotted', code: '統編', label: '統一編號', background: '#F4F4DF', border: '#77761A' },
+      TW_POLICY_NO: { group: '金融', line: 'dashed', code: '保單', label: '保單號碼', background: '#F9F1DF', border: '#A16207' },
+      ORG: { group: '組織地點', line: 'dashed', code: '機構', label: '機構名稱', background: '#FBE9FD', border: '#C026D3' },
+      LOC: { group: '組織地點', line: 'dotted', code: '地址', label: '地址地點', background: '#FDE9F2', border: '#DB2777' },
+      AGENT_CODE: { group: '內部', line: 'groove', code: '代號', label: '客服人員代號', background: '#EEF0F2', border: '#4B5563' },
       // 檔案批次的「整欄遮罩」策略產生的 finding(後端 entity_type)
-      COLUMN_MASK: { group: '內部', line: 'groove', code: '整欄', label: '整欄遮罩', background: '#F2F3F4', border: '#5A6570' },
-      DEFAULT: { group: '其他', line: 'groove', code: '其他', label: '未知類型', background: '#F2F3F4', border: '#5A6570' }
+      COLUMN_MASK: { group: '內部', line: 'groove', code: '整欄', label: '整欄遮罩', background: '#EEF0F2', border: '#4B5563' },
+      DEFAULT: { group: '其他', line: 'groove', code: '其他', label: '未知類型', background: '#EEF0F2', border: '#4B5563' }
     });
 
     const state = {
