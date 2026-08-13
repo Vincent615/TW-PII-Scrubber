@@ -862,22 +862,6 @@
       to { transform: rotate(360deg); }
     }
 
-    /* 窄視窗(1024 螢幕、125% 縮放):設定改為上下堆疊,
-       避免模式區與類型區互相擠壓 */
-    @media (max-width: 1150px) {
-      .control-card-grid {
-        grid-template-columns: 1fr;
-        gap: 12px;
-      }
-
-      .control-group + .control-group {
-        padding-left: 0;
-        border-left: 0;
-        border-top: 1px solid var(--rule);
-        padding-top: 12px;
-      }
-    }
-
     @keyframes result-reveal {
       from { opacity: 0; transform: translateY(4px); }
       to { opacity: 1; transform: translateY(0); }
@@ -1256,9 +1240,17 @@
       background: var(--canvas);
     }
 
+    /* 雙環焦點:內圈用底色反差、外圈用焦點色,任何底色都 ≥3:1。
+       單色焦點框在深色頂欄/選取分頁上實測僅 1.0-1.5:1 */
     :focus-visible {
       outline: 2px solid var(--focus);
       outline-offset: 2px;
+      box-shadow: 0 0 0 2px var(--paper);
+    }
+
+    .topbar :focus-visible {
+      outline-color: var(--sleeve-ink);
+      box-shadow: 0 0 0 2px var(--sleeve);
     }
 
     button:disabled,
@@ -1884,7 +1876,7 @@
     .highlight {
       padding: 0;
       border: 0;
-      border-bottom: 2px solid;
+      border-bottom: 3px solid;
       border-radius: 0;
       color: var(--ink) !important;
       font-weight: var(--fw-bold);
@@ -2294,6 +2286,22 @@
         forced-color-adjust: none;
       }
     }
+    /* 窄視窗(1024 螢幕、125% 縮放):設定改為上下堆疊,
+       避免模式區與類型區互相擠壓 */
+    @media (max-width: 1150px) {
+      .control-card-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .control-group + .control-group {
+        padding-left: 0;
+        border-left: 0;
+        border-top: 1px solid var(--rule);
+        padding-top: 12px;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -2553,10 +2561,10 @@
       TW_POLICY_NO: { group: '金融', line: 'dashed', code: '保單', label: '保單號碼', background: '#F6F1EB', border: '#8A4B00' },
       ORG: { group: '組織地點', line: 'dotted', code: '機構', label: '機構名稱', background: '#F3F0F7', border: '#6B3FA0' },
       LOC: { group: '組織地點', line: 'dotted', code: '地址', label: '地址地點', background: '#F3F0F7', border: '#6B3FA0' },
-      AGENT_CODE: { group: '內部', line: 'solid', code: '代號', label: '客服人員代號', background: '#F2F3F4', border: '#5A6570' },
+      AGENT_CODE: { group: '內部', line: 'groove', code: '代號', label: '客服人員代號', background: '#F2F3F4', border: '#5A6570' },
       // 檔案批次的「整欄遮罩」策略產生的 finding(後端 entity_type)
-      COLUMN_MASK: { group: '內部', line: 'solid', code: '整欄', label: '整欄遮罩', background: '#F2F3F4', border: '#5A6570' },
-      DEFAULT: { group: '其他', line: 'solid', code: '其他', label: '未知類型', background: '#F2F3F4', border: '#5A6570' }
+      COLUMN_MASK: { group: '內部', line: 'groove', code: '整欄', label: '整欄遮罩', background: '#F2F3F4', border: '#5A6570' },
+      DEFAULT: { group: '其他', line: 'groove', code: '其他', label: '未知類型', background: '#F2F3F4', border: '#5A6570' }
     });
 
     const state = {
@@ -2946,19 +2954,25 @@
           return;
         }
 
+        const usedTops = [];
+        const viewRect = elements.sourceView.getBoundingClientRect();
         sourceHighlights.forEach((highlight) => {
           const findingIndex = highlight.dataset.findingIndex;
           const finding = state.textFindings[Number(findingIndex)];
           if (!finding) return;
           // 用視覺矩形換算(offsetTop 受 offsetParent 影響,同一段落中
           // 各行的 inline span 可能回報相同值,導致刻度全部疊在一起)
-          const viewRect = elements.sourceView.getBoundingClientRect();
           const spanRect = highlight.getBoundingClientRect();
           const contentTop = spanRect.top - viewRect.top + elements.sourceView.scrollTop;
           const ratio = Math.max(0, Math.min(1, contentTop / elements.sourceView.scrollHeight));
+          let top = Math.round(startOffset + ratio * trackHeight);
+          // 同一行的多筆 finding 會落在同一個 top:逐一下移 6px 避免
+          // 互相覆蓋而無法點選(WCAG 2.2 目標間距)
+          while (usedTops.includes(top)) top += 6;
+          usedTops.push(top);
           const tick = createElement('button', 'audit-tick');
           tick.type = 'button';
-          tick.style.top = `${Math.round(startOffset + ratio * trackHeight)}px`;
+          tick.style.top = `${top}px`;
           applyEntityDotStyle(tick, finding.entity_type);
           tick.setAttribute(
             'aria-label',
