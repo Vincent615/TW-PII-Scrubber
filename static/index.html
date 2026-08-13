@@ -75,7 +75,7 @@
     }
 
     body {
-      min-width: 1080px;
+      min-width: 900px;      /* 相容 1024 寬螢幕與 125% 系統縮放 */
       height: 100vh;
       margin: 0;
       overflow: hidden;       /* 頁面本身不捲動,捲動交給內容區 */
@@ -364,7 +364,7 @@
       display: grid;
       min-height: 0;
       /* 380px:字級放大後,佔位符範例「王小明 → <PERSON_1>」的最小容納寬 */
-      grid-template-columns: 380px 1fr;
+      grid-template-columns: minmax(320px, 380px) 1fr;
       gap: 24px;
       overflow: hidden;
       padding: 8px 24px 12px;
@@ -860,6 +860,22 @@
 
     @keyframes spin {
       to { transform: rotate(360deg); }
+    }
+
+    /* 窄視窗(1024 螢幕、125% 縮放):設定改為上下堆疊,
+       避免模式區與類型區互相擠壓 */
+    @media (max-width: 1150px) {
+      .control-card-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .control-group + .control-group {
+        padding-left: 0;
+        border-left: 0;
+        border-top: 1px solid var(--rule);
+        padding-top: 12px;
+      }
     }
 
     @keyframes result-reveal {
@@ -1817,24 +1833,52 @@
       content: "";
     }
 
+    /* 命中區 24px(WCAG 2.2 目標尺寸),可見刻度 3px 置中於其中:
+       右側 ::after 畫刻度,按鈕本身透明但可點 */
     .audit-tick {
       position: absolute;
-      right: 8px;
-      left: 8px;
-      height: 3px;
-      min-height: 3px;
+      right: 2px;
+      left: 2px;
+      height: 24px;
+      min-height: 24px;
+      margin-top: -12px;
       padding: 0;
       border: 0;
       border-radius: 0;
+      background: transparent !important;
       cursor: pointer;
-      transition: height 80ms ease, outline-color 80ms ease;
     }
 
-    .audit-tick:hover,
+    /* 可見刻度(3px)畫在命中區正中央 */
+    .audit-tick::after {
+      position: absolute;
+      top: 50%;
+      right: 6px;
+      left: 6px;
+      height: 3px;
+      margin-top: -1.5px;
+      background: currentColor;
+      content: "";
+      transition: height 80ms ease, margin-top 80ms ease;
+    }
+
+    .audit-tick:hover::after,
+    .audit-tick:focus-visible::after {
+      height: 7px;
+      margin-top: -3.5px;
+    }
+
     .audit-tick:focus-visible {
-      height: 5px;
-      outline: 1px solid var(--ink);
-      outline-offset: 1px;
+      outline: 2px solid var(--focus);
+      outline-offset: -2px;
+    }
+
+    .legend-line-sample {
+      display: inline-block;
+      width: 16px;
+      height: 0;
+      border-bottom: 3px solid;
+      vertical-align: middle;
     }
 
     .highlight {
@@ -2497,20 +2541,20 @@
     const MAX_TEXT_LENGTH = 50000;
     const MAX_BATCH_FILES = 20;
     const ENTITY_STYLES = Object.freeze({
-      PERSON: { group: '身分', code: '姓名', label: '自然人姓名', background: '#EDF2F8', border: '#1F5FA8' },
-      TW_NATIONAL_ID: { group: '身分', code: '身證', label: '身分證字號', background: '#EDF2F8', border: '#1F5FA8' },
-      BIRTHDAY: { group: '身分', code: '生日', label: '出生日期', background: '#EDF2F8', border: '#1F5FA8' },
-      TW_MOBILE: { group: '聯絡', code: '手機', label: '手機號碼', background: '#EBF3F2', border: '#0B6B57' },
-      TW_PHONE: { group: '聯絡', code: '市話', label: '市內電話', background: '#EBF3F2', border: '#0B6B57' },
-      EMAIL_ADDRESS: { group: '聯絡', code: '信箱', label: '電子郵件', background: '#EBF3F2', border: '#0B6B57' },
-      CREDIT_CARD: { group: '金融', code: '卡號', label: '信用卡號', background: '#F6F1EB', border: '#8A4B00' },
-      TW_BANK_ACCOUNT: { group: '金融', code: '銀帳', label: '銀行帳號', background: '#F6F1EB', border: '#8A4B00' },
-      TW_UBN: { group: '金融', code: '統編', label: '統一編號', background: '#F6F1EB', border: '#8A4B00' },
-      TW_POLICY_NO: { group: '金融', code: '保單', label: '保單號碼', background: '#F6F1EB', border: '#8A4B00' },
-      ORG: { group: '組織地點', code: '機構', label: '機構名稱', background: '#F3F0F7', border: '#6B3FA0' },
-      LOC: { group: '組織地點', code: '地址', label: '地址地點', background: '#F3F0F7', border: '#6B3FA0' },
-      AGENT_CODE: { group: '內部', code: '代號', label: '客服人員代號', background: '#F2F3F4', border: '#5A6570' },
-      DEFAULT: { group: '其他', code: '其他', label: '未知類型', background: '#F2F3F4', border: '#5A6570' }
+      PERSON: { group: '身分', line: 'solid', code: '姓名', label: '自然人姓名', background: '#EDF2F8', border: '#1F5FA8' },
+      TW_NATIONAL_ID: { group: '身分', line: 'solid', code: '身證', label: '身分證字號', background: '#EDF2F8', border: '#1F5FA8' },
+      BIRTHDAY: { group: '身分', line: 'solid', code: '生日', label: '出生日期', background: '#EDF2F8', border: '#1F5FA8' },
+      TW_MOBILE: { group: '聯絡', line: 'double', code: '手機', label: '手機號碼', background: '#EBF3F2', border: '#0B6B57' },
+      TW_PHONE: { group: '聯絡', line: 'double', code: '市話', label: '市內電話', background: '#EBF3F2', border: '#0B6B57' },
+      EMAIL_ADDRESS: { group: '聯絡', line: 'double', code: '信箱', label: '電子郵件', background: '#EBF3F2', border: '#0B6B57' },
+      CREDIT_CARD: { group: '金融', line: 'dashed', code: '卡號', label: '信用卡號', background: '#F6F1EB', border: '#8A4B00' },
+      TW_BANK_ACCOUNT: { group: '金融', line: 'dashed', code: '銀帳', label: '銀行帳號', background: '#F6F1EB', border: '#8A4B00' },
+      TW_UBN: { group: '金融', line: 'dashed', code: '統編', label: '統一編號', background: '#F6F1EB', border: '#8A4B00' },
+      TW_POLICY_NO: { group: '金融', line: 'dashed', code: '保單', label: '保單號碼', background: '#F6F1EB', border: '#8A4B00' },
+      ORG: { group: '組織地點', line: 'dotted', code: '機構', label: '機構名稱', background: '#F3F0F7', border: '#6B3FA0' },
+      LOC: { group: '組織地點', line: 'dotted', code: '地址', label: '地址地點', background: '#F3F0F7', border: '#6B3FA0' },
+      AGENT_CODE: { group: '內部', line: 'solid', code: '代號', label: '客服人員代號', background: '#F2F3F4', border: '#5A6570' },
+      DEFAULT: { group: '其他', line: 'solid', code: '其他', label: '未知類型', background: '#F2F3F4', border: '#5A6570' }
     });
 
     const state = {
@@ -2668,8 +2712,10 @@
     }
 
     function entityLabel(entityType) {
-      const style = entityStyle(entityType);
-      return style.label || state.entityLabels.get(entityType) || entityType || '未知類型';
+      // 後端 /api/entities 是 label 的 source of truth;前端字典只作
+      // 後備,避免兩邊語彙漂移(例:後端「存款帳號」vs 前端「銀行帳號」)
+      return state.entityLabels.get(entityType) || entityStyle(entityType).label
+        || entityType || '未知類型';
     }
 
     function entityShortCode(entityType) {
@@ -2680,6 +2726,9 @@
       const style = entityStyle(entityType);
       node.style.backgroundColor = style.background;
       node.style.borderBottomColor = style.border;
+      // 底線樣式依群組不同(實線/雙線/虛線/點線):色盲下顏色可能相近,
+      // 線型提供不依賴顏色的第二重編碼
+      node.style.borderBottomStyle = style.line || 'solid';
       node.style.setProperty('--entity-color', style.border);
     }
 
@@ -2697,10 +2746,13 @@
       container.append(dot);
       // 短碼是全名的縮寫,兩者並列只在「需要對照顏色」的地方有價值
       // (圖例、明細表);控制項 chip 上並列只是冗餘,還會撐寬版面
-      if (options.code !== false) {
-        container.append(createElement('span', 'entity-code', entityShortCode(entityType)));
+      const label = entityLabel(entityType);
+      const code = entityShortCode(entityType);
+      // 短碼與後端 label 相同時(如「姓名」)不重複顯示
+      if (options.code !== false && code !== label) {
+        container.append(createElement('span', 'entity-code', code));
       }
-      container.append(createElement('span', 'entity-full-label', entityLabel(entityType)));
+      container.append(createElement('span', 'entity-full-label', label));
     }
 
     function revealOnce(element) {
@@ -2788,12 +2840,13 @@
           fragment.append(document.createTextNode(characters.slice(cursor, range.start).join('')));
         }
         const highlight = createElement('span', 'highlight');
-        highlight.textContent = characters.slice(range.start, range.end).join('');
+        // 類型以「視覺隱藏文字」提供給螢幕閱讀器:generic span 依 WAI-ARIA
+        // 不可被命名,直接下 aria-label 不保證生效(驗證器亦視為錯誤)
+        const srLabel = createElement('span', 'visually-hidden', `${entityLabel(range.finding.entity_type)}起`);
+        highlight.append(srLabel, document.createTextNode(characters.slice(range.start, range.end).join('')));
         highlight.title = entityLabel(range.finding.entity_type);
         highlight.dataset.findingIndex = String(range.index);
         highlight.dataset.entityType = String(range.finding.entity_type || 'DEFAULT');
-        const maskedValue = String(range.finding.original_masked ?? range.finding.replacement ?? '已遮罩');
-        highlight.setAttribute('aria-label', `${entityLabel(range.finding.entity_type)}:${maskedValue}`);
         applyEntityStyle(highlight, range.finding.entity_type);
         fragment.append(highlight);
         cursor = range.end;
@@ -2813,6 +2866,12 @@
         if (!type || seen.has(type)) continue;
         seen.add(type);
         const item = createElement('span', 'legend-item');
+        // 圖例的色點也套用群組線型,讓「顏色→線型→類型」三者可對照
+        const sample = createElement('span', 'legend-line-sample');
+        sample.setAttribute('aria-hidden', 'true');
+        sample.style.borderBottomColor = entityStyle(type).border;
+        sample.style.borderBottomStyle = entityStyle(type).line || 'solid';
+        item.append(sample);
         appendEntityIdentity(item, type, 'legend-dot');
         elements.textLegend.append(item);
       }
@@ -2853,7 +2912,25 @@
       });
     }
 
-    function renderAuditAxis() {
+    let auditAxisRetries = 0;
+
+    // 幾何就緒的時間點不可預測(字型載入、面板由隱藏轉顯示、flex 重排),
+    // 因此量測失敗時重試數幀;成功或超出上限即停止,絕不影響脫敏流程
+    function scheduleAuditAxisRetry() {
+      if (auditAxisRetries >= 12) return;
+      auditAxisRetries += 1;
+      scheduleAuditAxisRender(true);
+    }
+
+    // rAF 在背景分頁會被暫停(ResizeObserver 同理),因此並用 setTimeout
+    // 作為備援:任一先觸發都能繪製,重複呼叫只是重畫,無副作用
+    function scheduleAuditAxisRender(isRetry = false) {
+      window.requestAnimationFrame(() => renderAuditAxis(isRetry));
+      window.setTimeout(() => renderAuditAxis(isRetry), 80);
+    }
+
+    function renderAuditAxis(isRetry = false) {
+      if (!isRetry) auditAxisRetries = 0;
       clearAuditAxis();
       try {
         if (state.textResult === null || elements.sourceView.hidden) return;
@@ -2862,13 +2939,21 @@
         const startOffset = 54;
         const endOffset = 92;
         const trackHeight = axisHeight - startOffset - endOffset;
-        if (sourceHighlights.length === 0 || trackHeight <= 0 || elements.sourceView.scrollHeight <= 0) return;
+        if (sourceHighlights.length === 0 || trackHeight <= 0 || elements.sourceView.scrollHeight <= 0) {
+          scheduleAuditAxisRetry();
+          return;
+        }
 
         sourceHighlights.forEach((highlight) => {
           const findingIndex = highlight.dataset.findingIndex;
           const finding = state.textFindings[Number(findingIndex)];
           if (!finding) return;
-          const ratio = Math.max(0, Math.min(1, highlight.offsetTop / elements.sourceView.scrollHeight));
+          // 用視覺矩形換算(offsetTop 受 offsetParent 影響,同一段落中
+          // 各行的 inline span 可能回報相同值,導致刻度全部疊在一起)
+          const viewRect = elements.sourceView.getBoundingClientRect();
+          const spanRect = highlight.getBoundingClientRect();
+          const contentTop = spanRect.top - viewRect.top + elements.sourceView.scrollTop;
+          const ratio = Math.max(0, Math.min(1, contentTop / elements.sourceView.scrollHeight));
           const tick = createElement('button', 'audit-tick');
           tick.type = 'button';
           tick.style.top = `${Math.round(startOffset + ratio * trackHeight)}px`;
@@ -2891,6 +2976,7 @@
           elements.auditAxis.append(tick);
         });
       } catch (_error) {
+        // 稽核軸是輔助視覺,任何量測失敗都靜默降級,不影響脫敏流程
         clearAuditAxis();
       }
     }
@@ -3222,7 +3308,7 @@
         elements.resultModeNote.textContent = mode === 'placeholder' ? '佔位符模式' : '遮罩模式';
         elements.findingCount.textContent = `${findings.length.toLocaleString('zh-TW')} 筆偵測`;
         setStatus(elements.textStatus, `處理完成，共偵測 ${findings.length.toLocaleString('zh-TW')} 筆。`, { success: true });
-        window.requestAnimationFrame(renderAuditAxis);
+        scheduleAuditAxisRender();
       } catch (error) {
         showError(elements.textError, readableError(error));
         setStatus(elements.textStatus, '處理未完成');
@@ -3933,15 +4019,36 @@
       }
     }
 
-    elements.controlCardToggle.addEventListener('click', () => setControlsCollapsed(!state.controlsCollapsed));
+    elements.controlCardToggle.addEventListener('click', () => {
+      setControlsCollapsed(!state.controlsCollapsed);
+      // 收合改變面板高度 → 稽核軸需在轉場結束後重算
+      window.setTimeout(renderAuditAxis, 240);
+    });
     // 視窗變窄會讓偵測類型換行變多,展開高度需重新量測
-    window.addEventListener('resize', measureControlContentHeight);
+    window.addEventListener('resize', () => {
+      measureControlContentHeight();
+      // 刻度位置依面板高度換算,版面尺寸改變後必須重算,否則與文字失準
+      renderAuditAxis();
+    });
     // 偵測類型為非同步載入、chip 也會因視窗寬度換行:以 ResizeObserver
     // 追蹤實際內容尺寸,避免展開高度停留在載入前的舊值而裁切內容
     if (typeof ResizeObserver === 'function') {
       const controlContentObserver = new ResizeObserver(() => measureControlContentHeight());
       const observed = elements.controlCardContent.firstElementChild;
       if (observed) controlContentObserver.observe(observed);
+
+      // 稽核軸刻度位置由面板幾何換算:改用尺寸監看而非固定時序,
+      // 版面何時穩定就何時繪製,之後任何高度變化也會自動重算
+      let axisFrame = 0;
+      const auditObserver = new ResizeObserver(() => {
+        if (axisFrame) window.cancelAnimationFrame(axisFrame);
+        axisFrame = window.requestAnimationFrame(() => {
+          axisFrame = 0;
+          renderAuditAxis();
+        });
+      });
+      auditObserver.observe(elements.sourceView);
+      auditObserver.observe(elements.auditAxis);
     }
     elements.tabText.addEventListener('click', () => activateTab('text'));
     elements.tabFile.addEventListener('click', () => activateTab('file'));
