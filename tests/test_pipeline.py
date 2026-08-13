@@ -144,9 +144,11 @@ class TestScrubBatch:
     def test_batch_time_budget(self, regex_engine) -> None:
         from app.engine import BatchTimeoutError
 
+        # 用負數預算(明確已過期):Windows + Python 3.11 的 monotonic()
+        # 解析度僅 ~15.6ms,0.0 預算在同一 tick 內不觸發(CI 實證)
         with pytest.raises(BatchTimeoutError):
             regex_engine.scrub_batch(
-                ["A123456789"] * 3, mode="mask", time_budget_seconds=0.0
+                ["A123456789"] * 3, mode="mask", time_budget_seconds=-1.0
             )
 
     def test_empty_batch(self, regex_engine) -> None:

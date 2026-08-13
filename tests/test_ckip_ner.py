@@ -95,7 +95,8 @@ class TestCkipNer:
 
     def test_timeout_raises(self, rec) -> None:
         original = rec.timeout_seconds
-        rec.timeout_seconds = 0.0
+        # 負數=明確已過期(Windows 3.11 monotonic 解析度粗,0.0 有歧義)
+        rec.timeout_seconds = -1.0
         try:
             with pytest.raises(CkipTimeoutError):
                 rec.analyze("王小明住台北。", entities=["PERSON"])
