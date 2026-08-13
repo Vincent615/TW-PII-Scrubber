@@ -2954,7 +2954,10 @@
           return;
         }
 
-        const usedTops = [];
+        // 依可用軌道與筆數決定間距:讓「可見刻度」與「24px 點擊區」
+        // 同時不重疊——只分開可見線會造成「看到 A、點到 B」的落差
+        const spacing = Math.max(10, Math.min(24, trackHeight / Math.max(1, sourceHighlights.length)));
+        let lastTop = -Infinity;
         const viewRect = elements.sourceView.getBoundingClientRect();
         sourceHighlights.forEach((highlight) => {
           const findingIndex = highlight.dataset.findingIndex;
@@ -2966,13 +2969,17 @@
           const contentTop = spanRect.top - viewRect.top + elements.sourceView.scrollTop;
           const ratio = Math.max(0, Math.min(1, contentTop / elements.sourceView.scrollHeight));
           let top = Math.round(startOffset + ratio * trackHeight);
-          // 同一行的多筆 finding 會落在同一個 top:逐一下移 6px 避免
-          // 互相覆蓋而無法點選(WCAG 2.2 目標間距)
-          while (usedTops.includes(top)) top += 6;
-          usedTops.push(top);
+          // 與前一筆保持至少 spacing(含相距 1-5px 的近碰撞)
+          if (top < lastTop + spacing) top = Math.round(lastTop + spacing);
+          // 不再硬夾到軌道末端:夾擠會讓最後一筆與前一筆重疊;
+          // spacing = 軌道高/筆數 已保證整體落在軌道內
+          lastTop = top;
           const tick = createElement('button', 'audit-tick');
           tick.type = 'button';
           tick.style.top = `${top}px`;
+          tick.style.height = `${Math.round(spacing)}px`;
+          tick.style.minHeight = `${Math.round(spacing)}px`;
+          tick.style.marginTop = `${Math.round(-spacing / 2)}px`;
           applyEntityDotStyle(tick, finding.entity_type);
           tick.setAttribute(
             'aria-label',
