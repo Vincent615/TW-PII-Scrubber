@@ -43,7 +43,7 @@
 |---|---|---|
 | 適合對象 | 有 Python 環境、可連網的使用者與開發者 | 受管控電腦:無管理權限、不能裝 Python、不能連外下載 |
 | 使用方式 | 照下方指令安裝 | 解壓 → 雙擊「啟動.bat」→ 用 |
-| 取得 | 本 repo | 由維護者觸發 GitHub Actions 的 `build-portable` workflow,下載產出的 zip(內含 Python、全部相依與模型,約 1-2GB) |
+| 取得 | 本 repo | 到 [Releases](https://github.com/Vincent615/TW-PII-Scrubber/releases/latest) 下載 `TW-PII-Scrubber-portable-win64.zip`(約 0.6 GB,解壓後約 1.2 GB;內含 Python、全部相依與模型),另附 `SHA256SUMS.txt` 可驗證完整性 |
 | 邊界 | — | 若組織以 AppLocker/App Control 封鎖非白名單程式(含 exe/bat/**dll**),綠色版一樣會被擋,需 IT 白名單或改由 IT 派送;下載檔首次執行可能有 SmartScreen 提示;防毒首掃可能拖慢首次啟動;僅支援 64 位元 Windows |
 
 綠色版每一包都在 CI 的真實 Windows 環境建置並對「最終 zip 解壓後的
