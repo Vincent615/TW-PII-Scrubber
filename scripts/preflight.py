@@ -43,7 +43,25 @@ def missing_packages():
     return missing
 
 
+def activation_hints(windows):
+    """依平台回傳可直接照抄的修正指令。"""
+    if windows:
+        return [
+            ".venv\\Scripts\\Activate.ps1 後執行 run.bat",
+            "conda activate <環境名稱> 後執行 run.bat",
+            "set PYTHON=C:\\path\\to\\python.exe 後執行 run.bat",
+        ]
+    return [
+        "source .venv/bin/activate && ./run.sh",
+        "conda activate <環境名稱> && ./run.sh",
+        "PYTHON=/path/to/python ./run.sh",
+    ]
+
+
 def main():
+    # 訊息一律走 stderr。除了語意正確,還有一層保險:stderr 的錯誤處理器
+    # 預設是 backslashreplace,主控台編碼容不下中文時會退化成逸出序列而
+    # 不是拋 UnicodeEncodeError——否則使用者又只剩 traceback 可看。
     problems = []
     if sys.version_info < MIN_PYTHON:
         problems.append(
@@ -59,6 +77,7 @@ def main():
 
     windows = os.name == "nt"
     launcher = "run.bat" if windows else "./run.sh"
+    hints = activation_hints(windows)
 
     print("啟動失敗:", file=sys.stderr)
     for problem in problems:
@@ -68,14 +87,8 @@ def main():
     print("使用的直譯器:" + sys.executable, file=sys.stderr)
     print("", file=sys.stderr)
     print("最常見原因是虛擬環境沒有啟用。請擇一:", file=sys.stderr)
-    if windows:
-        print("  .venv\\Scripts\\Activate.ps1 後執行 run.bat", file=sys.stderr)
-        print("  conda activate <環境名稱> 後執行 run.bat", file=sys.stderr)
-        print("  set PYTHON=C:\\path\\to\\python.exe 後執行 run.bat", file=sys.stderr)
-    else:
-        print("  source .venv/bin/activate && ./run.sh", file=sys.stderr)
-        print("  conda activate <環境名稱> && ./run.sh", file=sys.stderr)
-        print("  PYTHON=/path/to/python ./run.sh", file=sys.stderr)
+    for hint in hints:
+        print("  " + hint, file=sys.stderr)
     print("", file=sys.stderr)
     print("若尚未安裝相依套件:pip install -r requirements.txt", file=sys.stderr)
     print("(%s 會在檢查通過後才啟動伺服器)" % launcher, file=sys.stderr)
