@@ -1920,14 +1920,6 @@
       font-weight: var(--fw-regular);
     }
 
-    .entity-code {
-      color: var(--ink);
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: var(--fs-xs);
-      font-weight: var(--fw-bold);
-      line-height: 1;
-    }
-
     .entity-full-label {
       color: var(--ink-2);
     }
@@ -2561,22 +2553,22 @@
     const MAX_TEXT_LENGTH = 50000;
     const MAX_BATCH_FILES = 20;
     const ENTITY_STYLES = Object.freeze({
-      PERSON: { group: '身分', line: 'solid', code: '姓名', label: '自然人姓名', background: '#E9F1FD', border: '#2B7CE9' },
-      TW_NATIONAL_ID: { group: '身分', line: 'double', code: '身證', label: '身分證字號', background: '#F1EAFE', border: '#7C3AED' },
-      BIRTHDAY: { group: '身分', line: 'double', code: '生日', label: '出生日期', background: '#FDEFE4', border: '#EA580C' },
-      TW_MOBILE: { group: '聯絡', line: 'double', code: '手機', label: '手機號碼', background: '#E2F5F2', border: '#0D9488' },
-      TW_PHONE: { group: '聯絡', line: 'dashed', code: '市話', label: '市內電話', background: '#E2F2F7', border: '#0E7490' },
-      EMAIL_ADDRESS: { group: '聯絡', line: 'solid', code: '信箱', label: '電子郵件', background: '#E6F4EA', border: '#15803D' },
-      CREDIT_CARD: { group: '金融', line: 'solid', code: '卡號', label: '信用卡號', background: '#FCE9E9', border: '#B91C1C' },
-      TW_BANK_ACCOUNT: { group: '金融', line: 'dotted', code: '銀帳', label: '銀行帳號', background: '#E8ECF7', border: '#1E3A8A' },
-      TW_UBN: { group: '金融', line: 'dotted', code: '統編', label: '統一編號', background: '#F4F4DF', border: '#77761A' },
-      TW_POLICY_NO: { group: '金融', line: 'dashed', code: '保單', label: '保單號碼', background: '#F9F1DF', border: '#A16207' },
-      ORG: { group: '組織地點', line: 'dashed', code: '機構', label: '機構名稱', background: '#FBE9FD', border: '#C026D3' },
-      LOC: { group: '組織地點', line: 'dotted', code: '地址', label: '地址地點', background: '#FDE9F2', border: '#DB2777' },
-      AGENT_CODE: { group: '內部', line: 'groove', code: '代號', label: '客服人員代號', background: '#EEF0F2', border: '#4B5563' },
+      PERSON: { group: '身分', line: 'solid', label: '自然人姓名', background: '#E9F1FD', border: '#2B7CE9' },
+      TW_NATIONAL_ID: { group: '身分', line: 'double', label: '身分證字號', background: '#F1EAFE', border: '#7C3AED' },
+      BIRTHDAY: { group: '身分', line: 'double', label: '出生日期', background: '#FDEFE4', border: '#EA580C' },
+      TW_MOBILE: { group: '聯絡', line: 'double', label: '手機號碼', background: '#E2F5F2', border: '#0D9488' },
+      TW_PHONE: { group: '聯絡', line: 'dashed', label: '市內電話', background: '#E2F2F7', border: '#0E7490' },
+      EMAIL_ADDRESS: { group: '聯絡', line: 'solid', label: '電子郵件', background: '#E6F4EA', border: '#15803D' },
+      CREDIT_CARD: { group: '金融', line: 'solid', label: '信用卡號', background: '#FCE9E9', border: '#B91C1C' },
+      TW_BANK_ACCOUNT: { group: '金融', line: 'dotted', label: '銀行帳號', background: '#E8ECF7', border: '#1E3A8A' },
+      TW_UBN: { group: '金融', line: 'dotted', label: '統一編號', background: '#F4F4DF', border: '#77761A' },
+      TW_POLICY_NO: { group: '金融', line: 'dashed', label: '保單號碼', background: '#F9F1DF', border: '#A16207' },
+      ORG: { group: '組織地點', line: 'dashed', label: '機構名稱', background: '#FBE9FD', border: '#C026D3' },
+      LOC: { group: '組織地點', line: 'dotted', label: '地址地點', background: '#FDE9F2', border: '#DB2777' },
+      AGENT_CODE: { group: '內部', line: 'groove', label: '客服人員代號', background: '#EEF0F2', border: '#4B5563' },
       // 檔案批次的「整欄遮罩」策略產生的 finding(後端 entity_type)
-      COLUMN_MASK: { group: '內部', line: 'groove', code: '整欄', label: '整欄遮罩', background: '#EEF0F2', border: '#4B5563' },
-      DEFAULT: { group: '其他', line: 'groove', code: '其他', label: '未知類型', background: '#EEF0F2', border: '#4B5563' }
+      COLUMN_MASK: { group: '內部', line: 'groove', label: '整欄遮罩', background: '#EEF0F2', border: '#4B5563' },
+      DEFAULT: { group: '其他', line: 'groove', label: '未知類型', background: '#EEF0F2', border: '#4B5563' }
     });
 
     const state = {
@@ -2740,10 +2732,6 @@
         || entityType || '未知類型';
     }
 
-    function entityShortCode(entityType) {
-      return entityStyle(entityType).code || '其他';
-    }
-
     function applyEntityStyle(node, entityType) {
       const style = entityStyle(entityType);
       node.style.backgroundColor = style.background;
@@ -2761,20 +2749,12 @@
       node.style.color = style.border;
     }
 
-    function appendEntityIdentity(container, entityType, dotClass = 'entity-dot', options = {}) {
+    function appendEntityIdentity(container, entityType, dotClass = 'entity-dot') {
       const dot = createElement('span', dotClass);
       dot.setAttribute('aria-hidden', 'true');
       applyEntityDotStyle(dot, entityType);
       container.append(dot);
-      // 短碼是全名的縮寫,兩者並列只在「需要對照顏色」的地方有價值
-      // (圖例、明細表);控制項 chip 上並列只是冗餘,還會撐寬版面
-      const label = entityLabel(entityType);
-      const code = entityShortCode(entityType);
-      // 短碼與後端 label 相同時(如「姓名」)不重複顯示
-      if (options.code !== false && code !== label) {
-        container.append(createElement('span', 'entity-code', code));
-      }
-      container.append(createElement('span', 'entity-full-label', label));
+      container.append(createElement('span', 'entity-full-label', entityLabel(entityType)));
     }
 
     function revealOnce(element) {
@@ -3042,7 +3022,7 @@
           applyEntityDotStyle(tick, primary.finding.entity_type);
           if (cluster.members.length > 1) tick.classList.add('is-cluster');
           const describe = (member) =>
-            `${entityShortCode(member.finding.entity_type)} ${entityLabel(member.finding.entity_type)}:${String(member.finding.original_masked ?? '已遮罩')}`;
+            `${entityLabel(member.finding.entity_type)}:${String(member.finding.original_masked ?? '已遮罩')}`;
           tick.setAttribute(
             'aria-label',
             cluster.members.length > 1
@@ -3293,7 +3273,7 @@
           checkbox.checked = true;
           checkbox.addEventListener('change', refreshControls);
           label.append(checkbox);
-          appendEntityIdentity(label, entity.id, 'entity-dot', { code: false });
+          appendEntityIdentity(label, entity.id, 'entity-dot');
           elements.entityList.append(label);
         });
 
