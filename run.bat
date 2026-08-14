@@ -8,6 +8,12 @@ set URL=http://127.0.0.1:7860
 rem 優先使用專案內的虛擬環境(未啟用 venv 也能正確執行)
 set PY=python
 if exist ".venv\Scripts\python.exe" set PY=.venv\Scripts\python.exe
+rem 允許以 set PYTHON=... 指定直譯器(與 run.sh 的 PYTHON 變數對應)
+if defined PYTHON set PY=%PYTHON%
+
+rem 啟動前檢查:直譯器缺套件時給明確指示,而不是數十行 traceback
+%PY% scripts\preflight.py
+if errorlevel 1 exit /b 1
 
 echo TW-PII-Scrubber 啟動中... %URL%
 echo (首次啟動需載入模型,約數十秒)
